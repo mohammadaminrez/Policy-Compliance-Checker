@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Access Controls",
+    "allOf": [
+      {
+        "field": "roles",
+        "operator": "contains",
+        "value": "approver"
+      },
+      {
+        "field": "last_login_days",
+        "operator": "<=",
+        "value": 30
+      }
+    ]
+  },
+  {
+    "name": "Travel Restrictions",
+    "anyOf": [
+      {
+        "field": "travel.region",
+        "operator": "in",
+        "value": ["US", "CA", "UK"]
+      },
+      {
+        "field": "travel.approved",
+        "operator": "==",
+        "value": false
+      }
+    ]
+  }
+]

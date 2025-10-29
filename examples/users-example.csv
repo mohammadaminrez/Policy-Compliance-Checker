@@ -1,6 +1,0 @@
-user_id,password_length,mfa_enabled,role,account_age_days
-user001,12,true,admin,45
-user002,6,false,user,10
-user003,10,true,manager,60
-user004,8,true,user,35
-user005,15,false,admin,100

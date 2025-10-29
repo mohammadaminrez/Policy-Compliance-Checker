@@ -1,0 +1,20 @@
+[
+  {
+    "user_id": "array-001",
+    "roles": ["viewer", "approver"],
+    "last_login_days": 15,
+    "travel": {
+      "region": "US",
+      "approved": true
+    }
+  },
+  {
+    "user_id": "array-002",
+    "roles": ["viewer"],
+    "last_login_days": 45,
+    "travel": {
+      "region": "DE",
+      "approved": false
+    }
+  }
+]
