@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from datetime import datetime
+from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.models.policy import Policy, EvaluationResult
@@ -247,3 +248,111 @@ async def clear_results(db: Session = Depends(get_db)):
     db.query(EvaluationResult).delete()
     db.commit()
     return {"message": "All results cleared"}
+
+
+class EvaluationSelectionRequest(BaseModel):
+    user_ids: List[int]
+    policy_ids: List[int]
+
+
+@router.post("/evaluate/selection")
+async def evaluate_by_selection(
+    selection: EvaluationSelectionRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Evaluate selected users and policies by database IDs.
+
+    Body:
+      { "user_ids": [int], "policy_ids": [int] }
+    """
+    try:
+        from app.models.policy import UserData
+
+        # Fetch user data records
+        user_records = (
+            db.query(UserData)
+            .filter(UserData.id.in_(selection.user_ids))
+            .all()
+        )
+
+        if len(user_records) == 0:
+            raise HTTPException(status_code=404, detail="No user data found for given IDs")
+
+        # Aggregate users list from stored raw payloads
+        users: List[Dict[str, Any]] = []
+        for record in user_records:
+            raw = record.raw or {}
+            if isinstance(raw, dict):
+                # Prefer common wrapper keys
+                for key in ["users", "data", "records", "items"]:
+                    if key in raw and isinstance(raw[key], list):
+                        users.extend(raw[key])
+                        break
+                else:
+                    # If looks like a single user object
+                    users.append(raw)
+            elif isinstance(raw, list):
+                users.extend(raw)
+
+        # Fetch policy records
+        policy_records = (
+            db.query(Policy)
+            .filter(Policy.id.in_(selection.policy_ids))
+            .all()
+        )
+
+        if len(policy_records) == 0:
+            raise HTTPException(status_code=404, detail="No policies found for given IDs")
+
+        # Normalize policies to a flat list
+        policies: List[Dict[str, Any]] = []
+        for p in policy_records:
+            raw_policy = p.raw
+            if isinstance(raw_policy, dict):
+                for key in ["policies", "rules", "checks"]:
+                    val = raw_policy.get(key)
+                    if isinstance(val, list):
+                        policies.extend(val)
+                        break
+                else:
+                    policies.append(raw_policy)
+            elif isinstance(raw_policy, list):
+                policies.extend(raw_policy)
+            else:
+                # Skip unsupported types
+                continue
+
+        if not users:
+            raise HTTPException(status_code=400, detail="Selected user data contains no users")
+        if not policies:
+            raise HTTPException(status_code=400, detail="Selected policies contain no rules")
+
+        # Evaluate
+        results = DynamicRuleEvaluator.evaluate_users_against_policies(users, policies)
+
+        # Store results
+        for result in results:
+            eval_result = EvaluationResult(
+                user_data=result["user_data"],
+                policy_data=result["policy"],
+                passed=str(result["passed"]),
+                details=result["details"]
+            )
+            db.add(eval_result)
+        db.commit()
+
+        return {
+            "message": "Evaluation completed",
+            "selected_user_records": len(user_records),
+            "selected_policy_records": len(policy_records),
+            "total_users": len(users),
+            "total_policies": len(policies),
+            "total_evaluations": len(results),
+            "results": results
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Evaluation failed: {str(e)}")
