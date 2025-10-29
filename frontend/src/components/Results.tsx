@@ -159,6 +159,135 @@ export const Results = () => {
     return true;
   });
 
+  // Fail-first ordering: users with failures on top
+  const orderedResults = [...filteredResults].sort((a, b) => {
+    const af = a.failed_rules > 0 ? 1 : 0;
+    const bf = b.failed_rules > 0 ? 1 : 0;
+    if (af !== bf) return bf - af; // failed first
+    // tie-breaker: more failed rules first
+    if (a.failed_rules !== b.failed_rules) return b.failed_rules - a.failed_rules;
+    return 0;
+  });
+
+  const getUserSummary = (r: EvaluationResult) => {
+    const files = r.policy_files?.length || 0;
+    const total = r.total_rules || 0;
+    const passed = r.passed_rules || 0;
+    const failed = r.failed_rules || 0;
+    return `${files} files • ${total} rules (${passed} ✓, ${failed} ✗)`;
+  };
+
+  const copyUserFailures = (r: EvaluationResult) => {
+    const failures: any[] = [];
+    r.policy_files.forEach(pf => {
+      pf.rules.filter(rr => !rr.passed).forEach(rr => {
+        const conds = collectFailedConditions(rr.details || {});
+        conds.forEach(c => failures.push({
+          user: getUserLabel(r),
+          policy_file: pf.policy_file,
+          rule_index: rr.rule_index,
+          field: c.field,
+          operator: c.operator,
+          expected: c.expected,
+          actual: c.actual,
+          error: c.error,
+        }));
+      });
+    });
+    const text = JSON.stringify(failures, null, 2);
+    navigator.clipboard?.writeText(text).catch(() => {});
+  };
+
+  const exportView = (format: 'json' | 'csv') => {
+    const ts = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}`;
+
+    // Use current ordered view (after filter and fail-first sorting)
+    const usersOrdered = orderedResults.map(r => {
+      const policiesOrdered = [...r.policy_files]
+        .sort((a,b) => (b.failed_rules>0?1:0)-(a.failed_rules>0?1:0) || b.failed_rules - a.failed_rules)
+        .map(pf => {
+          const rulesOrdered = [...pf.rules]
+            .sort((a,b) => (a.passed===b.passed?0:(a.passed?1:-1)))
+            .map(rr => {
+              const failed = collectFailedConditions(rr.details || {});
+              return {
+                rule_index: rr.rule_index + 1,
+                rule_name: getRuleName(rr.rule, rr.rule_index),
+                passed: rr.passed,
+                failed_conditions: failed,
+                rule: rr.rule,
+              };
+            });
+          return {
+            policy_file: pf.policy_file,
+            total_rules: pf.total_rules,
+            passed_rules: pf.passed_rules,
+            failed_rules: pf.failed_rules,
+            rules: rulesOrdered,
+          };
+        });
+      return {
+        user_label: getUserLabel(r),
+        summary: {
+          files: r.policy_files?.length || 0,
+          total_rules: r.total_rules || 0,
+          passed_rules: r.passed_rules || 0,
+          failed_rules: r.failed_rules || 0,
+          all_passed: r.all_passed,
+        },
+        policy_files: policiesOrdered,
+        user_data: r.user_data,
+      };
+    });
+
+    if (format === 'json') {
+      const payload = {
+        generated_at: new Date().toISOString(),
+        filter,
+        total_users: usersOrdered.length,
+        results: usersOrdered,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `compliance-view-${filter}-${stamp}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      return;
+    }
+
+    // CSV: flatten to one row per rule in the current view
+    const headers = ['user','policy_file','rule_index','rule_name','passed','failed_count','failed_conditions'];
+    const rows: any[] = [];
+    usersOrdered.forEach(u => {
+      u.policy_files.forEach(pf => {
+        pf.rules.forEach(rr => {
+          rows.push({
+            user: u.user_label,
+            policy_file: pf.policy_file,
+            rule_index: rr.rule_index,
+            rule_name: rr.rule_name,
+            passed: rr.passed,
+            failed_count: Array.isArray(rr.failed_conditions) ? rr.failed_conditions.length : 0,
+            failed_conditions: rr.failed_conditions && rr.failed_conditions.length > 0 ? JSON.stringify(rr.failed_conditions) : '',
+          });
+        });
+      });
+    });
+
+    const escape = (v: any) => {
+      const s = typeof v === 'string' ? v : JSON.stringify(v);
+      return '"' + (s ?? '').replace(/"/g, '""') + '"';
+    };
+    const csv = [headers.join(',')].concat(
+      rows.map(r => headers.map(h => escape((r as any)[h])).join(','))
+    ).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `compliance-view-${filter}-${stamp}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
+
   const passedCount = results.filter(r => r.all_passed).length;
   const failedCount = results.filter(r => !r.all_passed).length;
 
@@ -268,11 +397,16 @@ export const Results = () => {
               >
                 Failed
               </button>
+              <span style={{flex: '1 1 auto'}} />
+              <div className="results-actions" style={{display:'flex', gap:'0.5rem'}}>
+                <button className="btn-secondary" onClick={() => exportView('json')}>Export view (JSON)</button>
+                <button className="btn-secondary" onClick={() => exportView('csv')}>Export view (CSV)</button>
+              </div>
             </div>
           </div>
 
           <div className="simple-results-list">
-            {filteredResults.map((result, index) => (
+            {orderedResults.map((result, index) => (
               <div
                 key={index}
                 className={`result-card ${result.all_passed ? 'passed' : 'failed'}`}
@@ -282,8 +416,13 @@ export const Results = () => {
                     <span className="result-user">
                       <strong>User:</strong> {getUserLabel(result)}
                     </span>
+                    <span className="result-policy" style={{color:'#374151', fontSize:'0.9rem'}}>
+                      {getUserSummary(result)}
+                    </span>
                     <div className="policy-files-summary">
-                      {result.policy_files.map((policyFile, pfIdx) => (
+                      {[...result.policy_files]
+                        .sort((a,b) => (b.failed_rules>0?1:0)-(a.failed_rules>0?1:0) || b.failed_rules - a.failed_rules)
+                        .map((policyFile, pfIdx) => (
                         <span key={pfIdx} className="policy-file-summary">
                           <strong>{policyFile.policy_file}:</strong> {policyFile.total_rules} rules
                           {' '}({policyFile.passed_rules} passed, {policyFile.failed_rules} failed)
@@ -301,6 +440,7 @@ export const Results = () => {
                     >
                       {expandedRow === index ? 'Hide Details' : 'Show Details'}
                     </button>
+                    <button className="btn-details" onClick={() => copyUserFailures(result)}>Copy failures</button>
                   </div>
                 </div>
 
@@ -312,7 +452,9 @@ export const Results = () => {
                       <pre>{JSON.stringify(result.user_data, null, 2)}</pre>
                     </div>
 
-                    {result.policy_files.map((policyFile, pfIdx) => {
+                    {[...result.policy_files]
+                      .sort((a,b) => (b.failed_rules>0?1:0)-(a.failed_rules>0?1:0) || b.failed_rules - a.failed_rules)
+                      .map((policyFile, pfIdx) => {
                         const policyKey = `${policyFile.policy_file}-${pfIdx}`;
                         const isOpen = !!(expandedPolicies[index] && expandedPolicies[index][policyKey]);
                         return (
@@ -329,7 +471,9 @@ export const Results = () => {
                             </div>
                             {isOpen && (
                               <div className="policy-group-body">
-                                {policyFile.rules.map((ruleResult, rIdx) => (
+                                {[...policyFile.rules]
+                                  .sort((a,b) => (a.passed===b.passed?0:(a.passed?1:-1)))
+                                  .map((ruleResult, rIdx) => (
                                   <div key={rIdx} className={`policy-result ${ruleResult.passed ? 'passed' : 'failed'}`}>
                                     <div className="policy-result-header">
                                       <strong>Rule #{ruleResult.rule_index + 1}:</strong> {getRuleName(ruleResult.rule, ruleResult.rule_index)}
