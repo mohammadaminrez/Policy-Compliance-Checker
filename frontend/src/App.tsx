@@ -38,28 +38,6 @@ function App() {
         <p className="subtitle">Schema-Agnostic Policy Evaluation Engine</p>
       </header>
 
-      <div className="status-bar">
-        <div className="status-item">
-          <span className="status-label">Policy:</span>
-          <span className={`status-value ${policiesFile ? 'uploaded' : ''}`}>
-            {policiesFile ? policiesFile.name : 'Not uploaded'}
-          </span>
-        </div>
-        <div className="status-item">
-          <span className="status-label">Users:</span>
-          <span className={`status-value ${usersFile ? 'uploaded' : ''}`}>
-            {usersFile ? usersFile.name : 'Not uploaded'}
-          </span>
-        </div>
-        <button
-          className="btn-evaluate"
-          onClick={handleEvaluate}
-          disabled={!canEvaluate}
-        >
-          Evaluate
-        </button>
-      </div>
-
       <nav className="tabs">
         <button
           className={`tab ${activeTab === 'policy' ? 'active' : ''}`}

@@ -66,14 +66,27 @@ async def get_policies(db: Session = Depends(get_db)):
     ]
 
 
+@router.delete("/policies/{policy_id}")
+async def delete_policy(policy_id: int, db: Session = Depends(get_db)):
+    """Delete a policy by ID"""
+    policy = db.query(Policy).filter(Policy.id == policy_id).first()
+    if not policy:
+        raise HTTPException(status_code=404, detail="Policy not found")
+
+    db.delete(policy)
+    db.commit()
+    return {"message": "Policy deleted successfully"}
+
+
 @router.post("/users/upload")
 async def upload_users(
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
 ):
     """
     Upload user data file (CSV or JSON).
     Schema-agnostic - accepts any structure.
-    Does NOT store user data, just parses and returns.
+    Stores metadata temporarily.
     """
     try:
         # Read file content
@@ -89,16 +102,53 @@ async def upload_users(
         else:
             raise ValueError("File must be .csv or .json")
 
+        # Store user data
+        from app.models.policy import UserData
+        user_data = UserData(raw={"filename": file.filename, "users": users})
+        db.add(user_data)
+        db.commit()
+        db.refresh(user_data)
+
         return {
-            "message": "Users parsed successfully",
+            "message": "Users uploaded successfully",
             "count": len(users),
-            "users": users
+            "id": user_data.id,
+            "filename": file.filename
         }
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to parse users: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload users: {str(e)}")
+
+
+@router.get("/users")
+async def get_users(db: Session = Depends(get_db)):
+    """Get all uploaded user data"""
+    from app.models.policy import UserData
+    users = db.query(UserData).all()
+    return [
+        {
+            "id": u.id,
+            "filename": u.raw.get("filename", "unknown"),
+            "count": len(u.raw.get("users", [])),
+            "uploaded_at": u.uploaded_at.isoformat()
+        }
+        for u in users
+    ]
+
+
+@router.delete("/users/{user_id}")
+async def delete_users(user_id: int, db: Session = Depends(get_db)):
+    """Delete uploaded user data by ID"""
+    from app.models.policy import UserData
+    user_data = db.query(UserData).filter(UserData.id == user_id).first()
+    if not user_data:
+        raise HTTPException(status_code=404, detail="User data not found")
+
+    db.delete(user_data)
+    db.commit()
+    return {"message": "User data deleted successfully"}
 
 
 @router.post("/evaluate")

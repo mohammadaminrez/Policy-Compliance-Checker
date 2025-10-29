@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+
+interface Policy {
+  id: number;
+  name: string;
+  created_at: string;
+  raw: any;
+}
 
 interface PolicyUploadProps {
   onUploadSuccess: (file: File) => void;
@@ -10,6 +17,24 @@ export const PolicyUpload: React.FC<PolicyUploadProps> = ({ onUploadSuccess }) =
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadPolicies();
+  }, []);
+
+  const loadPolicies = async () => {
+    setLoading(true);
+    try {
+      const data = await api.getPolicies();
+      setPolicies(data);
+    } catch (err) {
+      console.error('Failed to load policies', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -38,11 +63,24 @@ export const PolicyUpload: React.FC<PolicyUploadProps> = ({ onUploadSuccess }) =
     try {
       const response = await api.uploadPolicy(file);
       setMessage(`Success: ${response.message}`);
+      setFile(null);
       onUploadSuccess(file);
+      loadPolicies();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to upload policy');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this policy?')) return;
+
+    try {
+      await api.deletePolicy(id);
+      loadPolicies();
+    } catch (err) {
+      setError('Failed to delete policy');
     }
   };
 
@@ -77,6 +115,28 @@ export const PolicyUpload: React.FC<PolicyUploadProps> = ({ onUploadSuccess }) =
 
       {message && <div className="message success">{message}</div>}
       {error && <div className="message error">{error}</div>}
+
+      {policies.length > 0 && (
+        <div className="policies-list">
+          <h3>Uploaded Policies</h3>
+          {policies.map((policy) => (
+            <div key={policy.id} className="policy-item">
+              <div className="policy-info">
+                <span className="policy-name">{policy.name}</span>
+                <span className="policy-date">
+                  {new Date(policy.created_at).toLocaleString()}
+                </span>
+              </div>
+              <button
+                className="btn-delete"
+                onClick={() => handleDelete(policy.id)}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

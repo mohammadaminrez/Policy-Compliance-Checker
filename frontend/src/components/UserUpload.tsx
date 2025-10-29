@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+
+interface UserFile {
+  id: number;
+  filename: string;
+  count: number;
+  uploaded_at: string;
+}
 
 interface UserUploadProps {
   onUploadSuccess: (file: File) => void;
@@ -10,7 +17,24 @@ export const UserUpload: React.FC<UserUploadProps> = ({ onUploadSuccess }) => {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [preview, setPreview] = useState<any>(null);
+  const [userFiles, setUserFiles] = useState<UserFile[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadUserFiles();
+  }, []);
+
+  const loadUserFiles = async () => {
+    setLoading(true);
+    try {
+      const data = await api.getUsers();
+      setUserFiles(data);
+    } catch (err) {
+      console.error('Failed to load user files', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -27,7 +51,6 @@ export const UserUpload: React.FC<UserUploadProps> = ({ onUploadSuccess }) => {
       setFile(selectedFile);
       setError('');
       setMessage('');
-      setPreview(null);
     }
   };
 
@@ -43,13 +66,25 @@ export const UserUpload: React.FC<UserUploadProps> = ({ onUploadSuccess }) => {
 
     try {
       const response = await api.uploadUsers(file);
-      setMessage(`Success: Parsed ${response.count} user records`);
-      setPreview(response.users.slice(0, 5)); // Show first 5 users
+      setMessage(`Success: ${response.count} users uploaded`);
+      setFile(null);
       onUploadSuccess(file);
+      loadUserFiles();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to upload users');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this user data?')) return;
+
+    try {
+      await api.deleteUser(id);
+      loadUserFiles();
+    } catch (err) {
+      setError('Failed to delete user data');
     }
   };
 
@@ -85,10 +120,25 @@ export const UserUpload: React.FC<UserUploadProps> = ({ onUploadSuccess }) => {
       {message && <div className="message success">{message}</div>}
       {error && <div className="message error">{error}</div>}
 
-      {preview && (
-        <div className="preview-box">
-          <h3>Preview (first 5 records):</h3>
-          <pre>{JSON.stringify(preview, null, 2)}</pre>
+      {userFiles.length > 0 && (
+        <div className="policies-list">
+          <h3>Uploaded User Files</h3>
+          {userFiles.map((userFile) => (
+            <div key={userFile.id} className="policy-item">
+              <div className="policy-info">
+                <span className="policy-name">{userFile.filename}</span>
+                <span className="policy-date">
+                  {userFile.count} users • {new Date(userFile.uploaded_at).toLocaleString()}
+                </span>
+              </div>
+              <button
+                className="btn-delete"
+                onClick={() => handleDelete(userFile.id)}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>
