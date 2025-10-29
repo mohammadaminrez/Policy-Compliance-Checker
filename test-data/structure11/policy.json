@@ -1,0 +1,61 @@
+{
+    "policies": [
+      {
+        "policyId": "P2001",
+        "policyName": "Senior Staff Access",
+        "description": "Access for (IT Staff with high clearance) OR (Engineering Managers).",
+        "condition": {
+          "matchType": "OR",
+          "conditions": [
+            {
+              "matchType": "AND",
+              "conditions": [
+                { "attribute": "department", "operator": "equals", "value": "IT" },
+                { "attribute": "clearanceLevel", "operator": "greater_than", "value": 4 }
+              ]
+            },
+            {
+              "matchType": "AND",
+              "conditions": [
+                { "attribute": "department", "operator": "equals", "value": "Engineering" },
+                { "attribute": "role", "operator": "equals", "value": "Manager" }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "policyId": "P2002",
+        "policyName": "Multi-Region Analyst (No Chicago)",
+        "description": "Access for Analysts in NY, London, or SF, but specifically not Chicago.",
+        "condition": {
+          "matchType": "AND",
+          "conditions": [
+            { "attribute": "role", "operator": "equals", "value": "Analyst" },
+            { 
+              "attribute": "location", 
+              "operator": "in", 
+              "value": ["New York", "London", "San Francisco"] 
+            },
+            { "attribute": "location", "operator": "not_equals", "value": "Chicago" }
+          ]
+        }
+      },
+      {
+        "policyId": "P2003",
+        "policyName": "Cloud Platform Users",
+        "description": "Access for non-HR users who have a cloud tag (aws, gcp, or azure).",
+        "condition": {
+          "matchType": "AND",
+          "conditions": [
+            { "attribute": "department", "operator": "not_equals", "value": "HR" },
+            { 
+              "attribute": "tags", 
+              "operator": "contains_any", 
+              "value": ["aws", "gcp", "azure"] 
+            }
+          ]
+        }
+      }
+    ]
+  }

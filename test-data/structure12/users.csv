@@ -1,0 +1,8 @@
+userId,name,role,is_active,projectKey,login_timestamp
+u-201,Mia Wong,Engineer,true,PROJ-123,2025-10-29T10:30:00Z
+u-202,Sam Chen,Contractor - Dev,true,PROJ-456,2025-10-29T09:00:00Z
+u-203,Leo Bisset,Admin,true,,2025-10-29T16:59:00Z
+u-204,Nina Gupta,Contractor - QA,false,PROJ-789,2025-10-29T11:00:00Z
+u-205,Omar Hassan,Engineer,true,null,2025-10-29T19:30:00Z
+u-206,Kim Fox,Sales,true,PROJ-123,2025-10-29T07:59:59Z
+u-207,Jin Yang,Engineer (Intern),true,PROJ-456,

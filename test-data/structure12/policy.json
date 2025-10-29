@@ -1,0 +1,50 @@
+{
+    "policies": [
+      {
+        "policyId": "P3001",
+        "policyName": "Robustness - JIRA Access",
+        "description": "User must have a valid 'projectKey'. Fails if the key is missing or explicitly null.",
+        "condition": {
+          "matchType": "AND",
+          "conditions": [
+            { "attribute": "projectKey", "operator": "not_equals", "value": null },
+            { "attribute": "projectKey", "operator": "exists", "value": true }
+          ]
+        }
+      },
+      {
+        "policyId": "P3002",
+        "policyName": "Boolean - Active Users Only",
+        "description": "Grants access only to users with the 'is_active' flag set to true.",
+        "condition": {
+          "matchType": "AND",
+          "conditions": [
+            { "attribute": "is_active", "operator": "equals", "value": true }
+          ]
+        }
+      },
+      {
+        "policyId": "P3003",
+        "policyName": "Wildcard - Contractor File Access",
+        "description": "Grants access to any user whose role starts with 'Contractor'.",
+        "condition": {
+          "matchType": "AND",
+          "conditions": [
+            { "attribute": "role", "operator": "startsWith", "value": "Contractor" }
+          ]
+        }
+      },
+      {
+        "policyId": "P3004",
+        "policyName": "Time-Based - Business Hours Access",
+        "description": "Grants access only during standard business hours (08:00 to 17:00 UTC).",
+        "condition": {
+          "matchType": "AND",
+          "conditions": [
+            { "attribute": "login_timestamp", "operator": "greater_than_or_equal_to", "value": "2025-10-29T08:00:00Z" },
+            { "attribute": "login_timestamp", "operator": "less_than_or_equal_to", "value": "2025-10-29T17:00:00Z" }
+          ]
+        }
+      }
+    ]
+  }

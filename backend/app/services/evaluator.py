@@ -1,5 +1,6 @@
 import re
 from typing import Any, Dict, List, Tuple, Callable
+from datetime import datetime
 
 
 class DynamicRuleEvaluator:
@@ -75,9 +76,12 @@ class DynamicRuleEvaluator:
         "not_contains": "not_contains",
         "does_not_contain": "not_contains",
         "excludes": "not_contains",
+        "contains_any": "contains_any",
         "starts_with": "starts_with",
         "begins_with": "starts_with",
+        "startswith": "starts_with",
         "ends_with": "ends_with",
+        "endswith": "ends_with",
         "matches": "regex",
         "regex": "regex",
         "pattern": "regex",
@@ -99,10 +103,10 @@ class DynamicRuleEvaluator:
     OPS: Dict[str, Callable] = {
         "==": lambda a, b: a == b,
         "!=": lambda a, b: a != b,
-        ">": lambda a, b: float(a) > float(b) if a is not None and b is not None else False,
-        "<": lambda a, b: float(a) < float(b) if a is not None and b is not None else False,
-        ">=": lambda a, b: float(a) >= float(b) if a is not None and b is not None else False,
-        "<=": lambda a, b: float(a) <= float(b) if a is not None and b is not None else False,
+        ">": lambda a, b: DynamicRuleEvaluator._gt(a, b),
+        "<": lambda a, b: DynamicRuleEvaluator._lt(a, b),
+        ">=": lambda a, b: DynamicRuleEvaluator._ge(a, b),
+        "<=": lambda a, b: DynamicRuleEvaluator._le(a, b),
         "in": lambda a, b: a in b if b is not None else False,
         "not_in": lambda a, b: a not in b if b is not None else True,
         "contains": lambda a, b: b in str(a) if a is not None else False,
@@ -114,7 +118,73 @@ class DynamicRuleEvaluator:
         "ends_with": lambda a, b: str(a).endswith(str(b)) if a is not None else False,
         "is_empty": lambda a, b: not a if a is not None else True,
         "is_not_empty": lambda a, b: bool(a) if a is not None else False,
+        "contains_any": lambda a, b: (
+            (lambda actual_list, expected_list: any(x in set(expected_list) for x in actual_list))(
+                (
+                    a.split("|") if isinstance(a, str) and "|" in a else (
+                        a.split(",") if isinstance(a, str) and "," in a else (
+                            list(a) if isinstance(a, (list, set, tuple)) else ([a] if a is not None else [])
+                        )
+                    )
+                ),
+                (list(b) if isinstance(b, (list, set, tuple)) else ([b] if b is not None else []))
+            )
+        ) if b is not None else False,
     }
+
+    @staticmethod
+    def _try_parse_datetime(value: Any) -> datetime | None:
+        if isinstance(value, str):
+            s = value.strip()
+            # Handle trailing Z (UTC)
+            if s.endswith("Z"):
+                s = s[:-1] + "+00:00"
+            try:
+                return datetime.fromisoformat(s)
+            except ValueError:
+                return None
+        return None
+
+    @classmethod
+    def _compare_datetime_or_number(cls, a: Any, b: Any) -> Tuple[Any, Any, str]:
+        """Return comparable values and the mode used: 'datetime' or 'number'.
+        Raises ValueError if neither can be compared."""
+        da = cls._try_parse_datetime(a)
+        db = cls._try_parse_datetime(b)
+        if da is not None and db is not None:
+            return da, db, "datetime"
+        # fallback to numeric
+        fa = float(a)
+        fb = float(b)
+        return fa, fb, "number"
+
+    @classmethod
+    def _gt(cls, a: Any, b: Any) -> bool:
+        if a is None or b is None:
+            return False
+        x, y, _ = cls._compare_datetime_or_number(a, b)
+        return x > y
+
+    @classmethod
+    def _lt(cls, a: Any, b: Any) -> bool:
+        if a is None or b is None:
+            return False
+        x, y, _ = cls._compare_datetime_or_number(a, b)
+        return x < y
+
+    @classmethod
+    def _ge(cls, a: Any, b: Any) -> bool:
+        if a is None or b is None:
+            return False
+        x, y, _ = cls._compare_datetime_or_number(a, b)
+        return x >= y
+
+    @classmethod
+    def _le(cls, a: Any, b: Any) -> bool:
+        if a is None or b is None:
+            return False
+        x, y, _ = cls._compare_datetime_or_number(a, b)
+        return x <= y
 
     @classmethod
     def evaluate(cls, user: Dict[str, Any], node: Any) -> Tuple[bool, Dict[str, Any]]:
@@ -136,7 +206,7 @@ class DynamicRuleEvaluator:
         if not isinstance(node, dict):
             return True, {"result": "non_dict_node", "value": node}
 
-        # Normalize common wrapper styles (e.g., { matchType: 'ALL'|'ANY', rules: [...] })
+        # Normalize common wrapper styles (e.g., { matchType: 'ALL'|'ANY', rules/conditions: [...] })
         if isinstance(node, dict) and "rules" in node and isinstance(node["rules"], list):
             match_type = str(node.get("matchType", node.get("match_type", "ALL"))).upper()
             if match_type == "ANY":
@@ -145,6 +215,18 @@ class DynamicRuleEvaluator:
             else:
                 # Default to ALL
                 return cls._evaluate_all_of(user, node["rules"])
+
+        # Support alternate tree { matchType: 'AND'|'OR', conditions: [...] }
+        if isinstance(node, dict) and "conditions" in node and isinstance(node["conditions"], list):
+            match_type = str(node.get("matchType", node.get("match_type", "AND"))).upper()
+            if match_type in ("ANY", "OR"):
+                return cls._evaluate_any_of(user, node["conditions"])
+            else:
+                return cls._evaluate_all_of(user, node["conditions"])
+
+        # Some formats wrap logical tree under a "condition" key
+        if isinstance(node, dict) and "condition" in node:
+            return cls.evaluate(user, node["condition"])  # recurse into condition tree
 
         # Check for logical operators (allOf, anyOf, not)
         if "allOf" in node:

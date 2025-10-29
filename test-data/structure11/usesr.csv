@@ -1,0 +1,8 @@
+userId,name,department,role,clearanceLevel,location,tags
+u-101,Aisha Khan,IT,Manager,5,New York,gcp|pii
+u-102,Ben Yoder,Engineering,Manager,4,San Francisco,aws|devops
+u-103,Chao Li,Finance,Analyst,3,London,finance
+u-104,Dina El-Amin,Sales,Analyst,3,Chicago,
+u-105,Evan Stone,HR,Recruiter,2,New York,aws|pii
+u-106,Fia Borja,Engineering,Intern,1,London,devops
+u-107,Greg Horn,IT,Specialist,4,New York,azure
