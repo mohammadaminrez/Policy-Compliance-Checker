@@ -1,0 +1,76 @@
+{
+    "policies": [
+      {
+        "policyId": "P1001",
+        "policyName": "Admin Full Access",
+        "description": "Grants full administrative access to core systems.",
+        "matchType": "ALL",
+        "rules": [
+          {
+            "attribute": "role",
+            "operator": "equals",
+            "value": "Admin"
+          },
+          {
+            "attribute": "clearanceLevel",
+            "operator": "greater_than_or_equal_to",
+            "value": 5
+          }
+        ]
+      },
+      {
+        "policyId": "P1002",
+        "policyName": "Engineering Document Access",
+        "description": "Grants access to engineering blueprints and specs.",
+        "matchType": "ALL",
+        "rules": [
+          {
+            "attribute": "department",
+            "operator": "equals",
+            "value": "Engineering"
+          },
+          {
+            "attribute": "clearanceLevel",
+            "operator": "greater_than_or_equal_to",
+            "value": 3
+          }
+        ]
+      },
+      {
+        "policyId": "P1003",
+        "policyName": "NY Finance Read-Only",
+        "description": "Grants read-only access to NY-based finance analysts.",
+        "matchType": "ALL",
+        "rules": [
+          {
+            "attribute": "department",
+            "operator": "equals",
+            "value": "Finance"
+          },
+          {
+            "attribute": "role",
+            "operator": "equals",
+            "value": "Analyst"
+          },
+          {
+            "attribute": "location",
+            "operator": "equals",
+            "value": "New York"
+          }
+        ]
+      },
+      {
+        "policyId": "P1004",
+        "policyName": "Sales Team Access",
+        "description": "Grants access to the shared CRM tool.",
+        "matchType": "ALL",
+        "rules": [
+          {
+            "attribute": "department",
+            "operator": "equals",
+            "value": "Sales"
+          }
+        ]
+      }
+    ]
+  }

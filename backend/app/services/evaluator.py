@@ -136,6 +136,16 @@ class DynamicRuleEvaluator:
         if not isinstance(node, dict):
             return True, {"result": "non_dict_node", "value": node}
 
+        # Normalize common wrapper styles (e.g., { matchType: 'ALL'|'ANY', rules: [...] })
+        if isinstance(node, dict) and "rules" in node and isinstance(node["rules"], list):
+            match_type = str(node.get("matchType", node.get("match_type", "ALL"))).upper()
+            if match_type == "ANY":
+                # Treat as anyOf
+                return cls._evaluate_any_of(user, node["rules"])
+            else:
+                # Default to ALL
+                return cls._evaluate_all_of(user, node["rules"])
+
         # Check for logical operators (allOf, anyOf, not)
         if "allOf" in node:
             return cls._evaluate_all_of(user, node["allOf"])

@@ -869,6 +869,27 @@ body {
   border-color: #9ca3af;
 }
 
+/* Generic buttons */
+.btn { padding: 0.5rem 1rem; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+.btn:hover { background: #e5e7eb; border-color: #9ca3af; }
+.btn-secondary { padding: 0.5rem 1rem; background: #fff; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+.btn-secondary:hover { background: #f3f4f6; border-color: #9ca3af; }
+.btn-edit { background: #fff; border-color: #d1d5db; color: #374151; }
+.btn-edit:hover { background: #f3f4f6; }
+.btn-cancel { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.btn-cancel:hover { background: #fee2e2; border-color: #fca5a5; }
+.icon-btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #d1d5db; border-radius: 6px; background: #f3f4f6; cursor: pointer; }
+.icon-btn:hover { background: #e5e7eb; }
+
+/* Split button for export */
+.results-actions { position: relative; }
+.btn-split { display: inline-flex; position: relative; }
+.btn-split .btn { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.btn-split .split-toggle { border-left: none; border-top-left-radius: 0; border-bottom-left-radius: 0; width: 36px; }
+.menu { position: absolute; right: 0; top: 100%; margin-top: 4px; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); z-index: 10; min-width: 180px; overflow: hidden; }
+.menu > button { width: 100%; text-align: left; padding: 0.5rem 0.75rem; background: #fff; border: none; cursor: pointer; }
+.menu > button:hover { background: #f9fafb; }
+
 .result-failures {
   margin-top: 1rem;
   padding: 1rem;

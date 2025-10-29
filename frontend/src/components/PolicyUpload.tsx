@@ -262,7 +262,7 @@ export const PolicyUpload: React.FC<PolicyUploadProps> = ({ onUploadSuccess }) =
               </div>
               <div className="policy-actions">
                 <button
-                  className="btn-secondary"
+                  className="btn-secondary btn-edit"
                   onClick={() => openEditor(policy)}
                 >
                   Edit
@@ -297,16 +297,16 @@ export const PolicyUpload: React.FC<PolicyUploadProps> = ({ onUploadSuccess }) =
               <label className="input-label">JSON</label>
               <div className="editor-toolbar">
                 <div className="left">
-                  <button className="btn-secondary" onClick={handleFormat} title="Format (pretty-print)">Format</button>
-                  <button className="btn-secondary" onClick={handleMinify} title="Minify JSON">Minify</button>
-                  <button className="btn-secondary" onClick={() => fileInputRef.current?.click()} title="Load from file">Load</button>
-                  <input ref={fileInputRef} type="file" accept=".json" style={{display:'none'}} onChange={handleLoadFromFile} />
-                  <button className="btn-secondary" onClick={handleDownload} title="Download JSON">Download</button>
+                  <button className="icon-btn" title="Format (pretty-print)" onClick={handleFormat}>⤢</button>
+                  <button className="icon-btn" title="Minify JSON" onClick={handleMinify}>≡</button>
+                  <button className="icon-btn" title="Load from file" onClick={() => fileInputRef.current?.click()}>⤒</button>
+                  <button className="icon-btn" title="Download JSON" onClick={handleDownload}>⤓</button>
                 </div>
                 <div className={`validity ${jsonValid ? 'ok' : 'err'}`}>
                   {jsonValid ? 'JSON valid' : `Invalid JSON: ${jsonError}`}
                 </div>
               </div>
+              <input ref={fileInputRef} type="file" accept=".json" style={{display:'none'}} onChange={handleLoadFromFile} />
               <textarea
                 className={`input-textarea code editor-area ${jsonValid ? '' : 'has-error'}`}
                 rows={22}
@@ -317,7 +317,7 @@ export const PolicyUpload: React.FC<PolicyUploadProps> = ({ onUploadSuccess }) =
               {message && <div className="message success">{message}</div>}
             </div>
             <div className="modal-footer">
-              <button className="btn-secondary" onClick={closeEditor} disabled={saving}>Cancel</button>
+              <button className="btn-secondary btn-cancel" onClick={closeEditor} disabled={saving}>Cancel</button>
               <button className="btn-primary" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
             </div>
           </div>

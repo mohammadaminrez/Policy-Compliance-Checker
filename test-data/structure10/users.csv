@@ -1,0 +1,9 @@
+userId,name,email,department,role,clearanceLevel,location
+u-001,Alice Smith,alice@example.com,IT,Admin,5,New York
+u-002,Bob Johnson,bob@example.com,Engineering,Senior Engineer,4,San Francisco
+u-003,Carol White,carol@example.com,Finance,Analyst,3,New York
+u-004,David Brown,david@example.com,Sales,Associate,1,Chicago
+u-005,Eve Davis,eve@example.com,Engineering,Engineer,2,London
+u-006,Frank Green,frank@example.com,Finance,Analyst,3,London
+u-007,Grace Lee,grace@example.com,IT,Support,2,New York
+u-008,Henry Wong,henry@example.com,Sales,Manager,3,San Francisco

@@ -37,6 +37,7 @@ export const Results = () => {
   const [filter, setFilter] = useState<'all' | 'passed' | 'failed'>('all');
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [expandedPolicies, setExpandedPolicies] = useState<Record<number, Record<string, boolean>>>({});
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   const togglePolicyExpand = (rowIndex: number, policyKey: string) => {
     setExpandedPolicies(prev => {
@@ -398,9 +399,17 @@ export const Results = () => {
                 Failed
               </button>
               <span style={{flex: '1 1 auto'}} />
-              <div className="results-actions" style={{display:'flex', gap:'0.5rem'}}>
-                <button className="btn-secondary" onClick={() => exportView('json')}>Export view (JSON)</button>
-                <button className="btn-secondary" onClick={() => exportView('csv')}>Export view (CSV)</button>
+              <div className="results-actions">
+                <div className="btn-split">
+                  <button className="btn" onClick={() => exportView('json')}>Export view</button>
+                  <button className="btn split-toggle" onClick={() => setExportMenuOpen(!exportMenuOpen)}>▾</button>
+                  {exportMenuOpen && (
+                    <div className="menu">
+                      <button onClick={() => { exportView('json'); setExportMenuOpen(false); }}>Export as JSON</button>
+                      <button onClick={() => { exportView('csv'); setExportMenuOpen(false); }}>Export as CSV</button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
