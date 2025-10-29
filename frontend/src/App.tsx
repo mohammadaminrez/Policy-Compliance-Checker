@@ -8,28 +8,6 @@ type Tab = 'policy' | 'users' | 'results';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('policy');
-  const [policiesFile, setPoliciesFile] = useState<File | null>(null);
-  const [usersFile, setUsersFile] = useState<File | null>(null);
-  const [triggerEvaluation, setTriggerEvaluation] = useState(false);
-
-  const handlePolicyUploadSuccess = (file: File) => {
-    setPoliciesFile(file);
-  };
-
-  const handleUserUploadSuccess = (file: File) => {
-    setUsersFile(file);
-  };
-
-  const handleEvaluate = () => {
-    setActiveTab('results');
-    setTriggerEvaluation(true);
-  };
-
-  const handleEvaluationComplete = () => {
-    setTriggerEvaluation(false);
-  };
-
-  const canEvaluate = policiesFile !== null && usersFile !== null;
 
   return (
     <div className="app">
@@ -61,18 +39,13 @@ function App() {
 
       <main className="content">
         {activeTab === 'policy' && (
-          <PolicyUpload onUploadSuccess={handlePolicyUploadSuccess} />
+          <PolicyUpload onUploadSuccess={() => {}} />
         )}
         {activeTab === 'users' && (
-          <UserUpload onUploadSuccess={handleUserUploadSuccess} />
+          <UserUpload onUploadSuccess={() => {}} />
         )}
         {activeTab === 'results' && (
-          <Results
-            policiesFile={policiesFile}
-            usersFile={usersFile}
-            triggerEvaluation={triggerEvaluation}
-            onEvaluationComplete={handleEvaluationComplete}
-          />
+          <Results />
         )}
       </main>
 
