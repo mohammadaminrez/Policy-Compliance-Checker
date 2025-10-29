@@ -1,0 +1,9 @@
+{
+    "policyId": "P4005",
+    "policyName": "Alphabetical Comparison",
+    "condition": {
+      "field": "lastName",
+      "op": "greater_than",
+      "value": "M"
+    }
+  }
