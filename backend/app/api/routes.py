@@ -12,6 +12,80 @@ from app.services.evaluator import DynamicRuleEvaluator
 router = APIRouter()
 
 
+def _derive_label(data: Dict[str, Any], preferred_keys: List[str]) -> str | None:
+    """Best-effort human-readable label for arbitrary data."""
+    for key in preferred_keys:
+        value = data.get(key)
+        if isinstance(value, (str, int, float)):
+            return str(value)
+
+    for key, value in data.items():
+        if isinstance(value, (str, int, float)):
+            return f"{key}: {value}"
+    return None
+
+
+def _build_user_contexts_from_file(users: List[Dict[str, Any]], source: str) -> List[Dict[str, Any]]:
+    contexts: List[Dict[str, Any]] = []
+    for index, user in enumerate(users):
+        label = _derive_label(user, ["user_id", "id", "email", "username", "name"])
+        contexts.append(
+            {
+                "label": label or f"User #{index + 1}",
+                "source": source,
+                "index": index,
+            }
+        )
+    return contexts
+
+
+def _normalize_policies_from_payload(
+    payload: Any,
+    source: str,
+    policy_id: int | None = None
+) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Normalize arbitrary policy payloads into a flat list of policy dictionaries
+    while preserving human-readable context.
+    """
+    policies: List[Dict[str, Any]] = []
+    contexts: List[Dict[str, Any]] = []
+
+    def _append_policy(entry: Dict[str, Any], extra: Dict[str, Any] | None = None):
+        index = len(policies)
+        label = _derive_label(entry, ["name", "title", "id", "policy"])
+        context: Dict[str, Any] = {
+            "label": label or f"Policy #{index + 1}",
+            "source": source,
+            "index": index,
+        }
+        if policy_id is not None:
+            context["policy_id"] = policy_id
+        if extra:
+            context.update(extra)
+        policies.append(entry)
+        contexts.append(context)
+
+    if isinstance(payload, list):
+        for position, item in enumerate(payload):
+            if isinstance(item, dict):
+                _append_policy(item, {"position": position})
+    elif isinstance(payload, dict):
+        if "policies" in payload and isinstance(payload["policies"], list):
+            for position, item in enumerate(payload["policies"]):
+                if isinstance(item, dict):
+                    _append_policy(item, {"section": "policies", "position": position})
+        else:
+            _append_policy(payload, None)
+    else:
+        raise ValueError("Policy file must contain object or array")
+
+    if len(policies) == 0:
+        raise ValueError("No policy entries found in payload")
+
+    return policies, contexts
+
+
 @router.post("/policies/upload")
 async def upload_policy(
     file: UploadFile = File(...),
@@ -182,31 +256,33 @@ async def evaluate(
         policies_content_str = policies_content.decode("utf-8")
         policy_data = FileParser.parse_json(policies_content_str)
 
-        # Normalize policies to list
-        if isinstance(policy_data, dict):
-            # Check for common wrapper keys
-            for key in ["policies", "rules", "checks"]:
-                if key in policy_data and isinstance(policy_data[key], list):
-                    policies = policy_data[key]
-                    break
-            else:
-                # Treat whole object as single policy
-                policies = [policy_data]
-        elif isinstance(policy_data, list):
-            policies = policy_data
-        else:
-            raise ValueError("Policy file must contain object or array")
+        # Normalize policies into discrete entries while keeping metadata
+        user_source = users_file.filename or "Uploaded Users"
+        policy_source = policies_file.filename or "Uploaded Policies"
+        user_contexts = _build_user_contexts_from_file(users, user_source)
+        policies, policy_contexts = _normalize_policies_from_payload(policy_data, policy_source)
 
         # Evaluate dynamically
-        results = DynamicRuleEvaluator.evaluate_users_against_policies(users, policies)
+        results = DynamicRuleEvaluator.evaluate_users_against_policies(
+            users,
+            policies,
+            user_contexts=user_contexts,
+            policy_contexts=policy_contexts,
+        )
 
         # Store results in database
         for result in results:
+            details_payload = {
+                "evaluation": result["details"],
+                "failed_conditions": result.get("failed_conditions"),
+                "user_context": result.get("user_context"),
+                "policy_context": result.get("policy_context"),
+            }
             eval_result = EvaluationResult(
                 user_data=result["user_data"],
                 policy_data=result["policy"],
                 passed=str(result["passed"]),
-                details=result["details"]
+                details=details_payload
             )
             db.add(eval_result)
 
@@ -229,17 +305,35 @@ async def get_results(db: Session = Depends(get_db)):
     """Get all evaluation results"""
     results = db.query(EvaluationResult).order_by(EvaluationResult.evaluated_at.desc()).all()
 
-    return [
-        {
-            "id": r.id,
-            "user_data": r.user_data,
-            "policy_data": r.policy_data,
-            "passed": r.passed == "True",
-            "details": r.details,
-            "evaluated_at": r.evaluated_at.isoformat()
-        }
-        for r in results
-    ]
+    formatted_results = []
+    for r in results:
+        details_payload = r.details or {}
+        if isinstance(details_payload, dict):
+            evaluation_details = details_payload.get("evaluation", details_payload)
+            user_context = details_payload.get("user_context")
+            policy_context = details_payload.get("policy_context")
+            failed_conditions = details_payload.get("failed_conditions")
+        else:
+            evaluation_details = details_payload
+            user_context = None
+            policy_context = None
+            failed_conditions = None
+
+        formatted_results.append(
+            {
+                "id": r.id,
+                "user_data": r.user_data,
+                "policy_data": r.policy_data,
+                "passed": r.passed == "True",
+                "details": evaluation_details,
+                "user_context": user_context,
+                "policy_context": policy_context,
+                "failed_conditions": failed_conditions,
+                "evaluated_at": r.evaluated_at.isoformat(),
+            }
+        )
+
+    return formatted_results
 
 
 @router.delete("/results")
@@ -281,19 +375,46 @@ async def evaluate_by_selection(
 
         # Aggregate users list from stored raw payloads
         users: List[Dict[str, Any]] = []
+        user_contexts: List[Dict[str, Any]] = []
+        user_global_index = 0
         for record in user_records:
             raw = record.raw or {}
+            filename = raw.get("filename") if isinstance(raw, dict) else None
+            source_label = filename or f"UserData #{record.id}"
+
+            def _append_user(entry: Dict[str, Any], position: int | None = None):
+                nonlocal user_global_index
+                label = _derive_label(entry, ["user_id", "id", "email", "username", "name"])
+                context: Dict[str, Any] = {
+                    "label": label or f"User #{user_global_index + 1}",
+                    "source": source_label,
+                    "index": user_global_index,
+                    "record_id": record.id,
+                }
+                if position is not None:
+                    context["record_position"] = position
+                if filename:
+                    context["filename"] = filename
+                users.append(entry)
+                user_contexts.append(context)
+                user_global_index += 1
+
             if isinstance(raw, dict):
-                # Prefer common wrapper keys
+                extracted = False
                 for key in ["users", "data", "records", "items"]:
                     if key in raw and isinstance(raw[key], list):
-                        users.extend(raw[key])
+                        for position, entry in enumerate(raw[key]):
+                            if isinstance(entry, dict):
+                                _append_user(entry, position=position)
+                        extracted = True
                         break
-                else:
-                    # If looks like a single user object
-                    users.append(raw)
+                if not extracted:
+                    if isinstance(raw, dict):
+                        _append_user(raw)
             elif isinstance(raw, list):
-                users.extend(raw)
+                for position, entry in enumerate(raw):
+                    if isinstance(entry, dict):
+                        _append_user(entry, position=position)
 
         # Fetch policy records
         policy_records = (
@@ -307,21 +428,25 @@ async def evaluate_by_selection(
 
         # Normalize policies to a flat list
         policies: List[Dict[str, Any]] = []
+        policy_contexts: List[Dict[str, Any]] = []
+
         for p in policy_records:
             raw_policy = p.raw
-            if isinstance(raw_policy, dict):
-                for key in ["policies", "rules", "checks"]:
-                    val = raw_policy.get(key)
-                    if isinstance(val, list):
-                        policies.extend(val)
-                        break
-                else:
-                    policies.append(raw_policy)
-            elif isinstance(raw_policy, list):
-                policies.extend(raw_policy)
-            else:
-                # Skip unsupported types
+            source_label = p.name or f"Policy #{p.id}"
+            try:
+                extracted_policies, extracted_contexts = _normalize_policies_from_payload(
+                    raw_policy,
+                    source_label,
+                    policy_id=p.id
+                )
+            except ValueError:
                 continue
+
+            index_offset = len(policies)
+            for context in extracted_contexts:
+                context["index"] = context["index"] + index_offset
+            policies.extend(extracted_policies)
+            policy_contexts.extend(extracted_contexts)
 
         if not users:
             raise HTTPException(status_code=400, detail="Selected user data contains no users")
@@ -329,15 +454,26 @@ async def evaluate_by_selection(
             raise HTTPException(status_code=400, detail="Selected policies contain no rules")
 
         # Evaluate
-        results = DynamicRuleEvaluator.evaluate_users_against_policies(users, policies)
+        results = DynamicRuleEvaluator.evaluate_users_against_policies(
+            users,
+            policies,
+            user_contexts=user_contexts,
+            policy_contexts=policy_contexts,
+        )
 
         # Store results
         for result in results:
+            details_payload = {
+                "evaluation": result["details"],
+                "failed_conditions": result.get("failed_conditions"),
+                "user_context": result.get("user_context"),
+                "policy_context": result.get("policy_context"),
+            }
             eval_result = EvaluationResult(
                 user_data=result["user_data"],
                 policy_data=result["policy"],
                 passed=str(result["passed"]),
-                details=result["details"]
+                details=details_payload
             )
             db.add(eval_result)
         db.commit()

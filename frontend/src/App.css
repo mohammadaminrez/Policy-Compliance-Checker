@@ -560,6 +560,42 @@ body {
   background: #f9fafb;
 }
 
+.entity-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.entity-label {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.entity-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.failure-count {
+  display: inline-block;
+  min-width: 2rem;
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.failure-count.no-failures {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.failure-count.has-failures {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .row-passed {
   background: rgba(16, 185, 129, 0.05);
 }
@@ -626,6 +662,111 @@ body {
   font-size: 0.8rem;
   max-height: 300px;
   overflow-y: auto;
+}
+
+.failures-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.failure-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.failure-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 700;
+}
+
+.failure-content {
+  flex: 1;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.failure-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #991b1b;
+}
+
+.failure-field {
+  font-weight: 600;
+  color: #7f1d1d;
+}
+
+.failure-operator {
+  padding: 0.1rem 0.5rem;
+  background: #fee2e2;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.failure-expected,
+.failure-actual {
+  color: #7f1d1d;
+}
+
+.failure-error {
+  color: #7f1d1d;
+  font-style: italic;
+}
+
+.no-failures-message {
+  color: #166534;
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.context-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.context-list li {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.25rem 0;
+}
+
+.context-key {
+  font-weight: 600;
+  color: #374151;
+  min-width: 110px;
+  text-transform: capitalize;
+}
+
+.context-value {
+  color: #1f2937;
+}
+
+.stat.warning .stat-value {
+  color: #f97316;
 }
 
 .footer {

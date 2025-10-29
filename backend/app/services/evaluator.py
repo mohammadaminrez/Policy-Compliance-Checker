@@ -232,18 +232,23 @@ class DynamicRuleEvaluator:
         # Evaluate the policy recursively
         passed, details = cls.evaluate(user_data, policy)
 
+        failed_conditions = cls._collect_failed_conditions(details) if not passed else []
+
         return {
             "user_data": user_data,
             "policy": policy,
             "passed": passed,
-            "details": details
+            "details": details,
+            "failed_conditions": failed_conditions,
         }
 
     @classmethod
     def evaluate_users_against_policies(
         cls,
         users: List[Dict[str, Any]],
-        policies: List[Dict[str, Any]]
+        policies: List[Dict[str, Any]],
+        user_contexts: List[Dict[str, Any]] | None = None,
+        policy_contexts: List[Dict[str, Any]] | None = None,
     ) -> List[Dict[str, Any]]:
         """
         Evaluate multiple users against multiple policies.
@@ -262,6 +267,41 @@ class DynamicRuleEvaluator:
                 result = cls.evaluate_user_against_policy(user, policy)
                 result["user_index"] = user_index
                 result["policy_index"] = policy_index
+                if user_contexts and user_index < len(user_contexts):
+                    result["user_context"] = user_contexts[user_index]
+                if policy_contexts and policy_index < len(policy_contexts):
+                    result["policy_context"] = policy_contexts[policy_index]
                 results.append(result)
 
         return results
+
+    @classmethod
+    def _collect_failed_conditions(cls, details: Any) -> List[Dict[str, Any]]:
+        """
+        Walk evaluation details recursively and collect failing leaf conditions.
+        """
+        failures: List[Dict[str, Any]] = []
+
+        if isinstance(details, dict):
+            detail_type = details.get("type")
+            if detail_type == "condition":
+                if not details.get("passed", False):
+                    failures.append(
+                        {
+                            "field": details.get("field"),
+                            "operator": details.get("operator"),
+                            "expected": details.get("expected"),
+                            "actual": details.get("actual"),
+                            "error": details.get("error"),
+                        }
+                    )
+            else:
+                if "conditions" in details:
+                    failures.extend(cls._collect_failed_conditions(details["conditions"]))
+                if "condition" in details:
+                    failures.extend(cls._collect_failed_conditions(details["condition"]))
+        elif isinstance(details, list):
+            for item in details:
+                failures.extend(cls._collect_failed_conditions(item))
+
+        return failures
