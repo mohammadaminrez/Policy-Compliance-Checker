@@ -444,6 +444,10 @@ class DynamicRuleEvaluator:
         if not key:
             return None
 
+        # First, try literal key (supports flat structures with dots in keys)
+        if isinstance(data, dict) and key in data:
+            return data[key]
+
         keys = key.split(".")
         value = data
 

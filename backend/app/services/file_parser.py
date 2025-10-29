@@ -28,11 +28,32 @@ class FileParser:
             reader = csv.DictReader(csv_file)
             users = []
 
+            def _assign_nested(target: Dict[str, Any], dotted_key: str, value: Any) -> None:
+                # If the literal key exists or no dot, assign directly
+                if "." not in dotted_key:
+                    target[dotted_key] = value
+                    return
+                # Build nested dicts for dot notation
+                parts = [p for p in dotted_key.split(".") if p]
+                if not parts:
+                    return
+                curr = target
+                for p in parts[:-1]:
+                    if p not in curr or not isinstance(curr[p], dict):
+                        curr[p] = {}
+                    curr = curr[p]  # type: ignore[index]
+                curr[parts[-1]] = value
+
             for row in reader:
-                # Convert values to appropriate types dynamically
-                user_data = {}
+                # Convert values to appropriate types dynamically and support dot-notated headers
+                user_data: Dict[str, Any] = {}
                 for key, value in row.items():
-                    user_data[key] = FileParser._convert_value(value)
+                    converted = FileParser._convert_value(value)
+                    # Prefer nested assignment when header contains dot
+                    if key and "." in key:
+                        _assign_nested(user_data, key, converted)
+                    else:
+                        user_data[key] = converted
                 users.append(user_data)
 
             return users

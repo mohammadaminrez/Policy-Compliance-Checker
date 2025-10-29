@@ -1,0 +1,4 @@
+userId,name,department,meta.profile.is_senior
+u-301,Ana,Engineering,true
+u-302,Bob,Engineering,false
+u-303,Cid,Finance,true

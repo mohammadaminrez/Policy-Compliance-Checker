@@ -1,0 +1,9 @@
+{
+  "policyId": "P4001",
+  "policyName": "Implicit Dot Notation",
+  "description": "Tests implicit AND with nested user data",
+  "condition": {
+    "department": "Engineering",
+    "meta.profile.is_senior": true
+  }
+}
