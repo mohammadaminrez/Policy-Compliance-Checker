@@ -45,6 +45,14 @@ export const api = {
     return response.data;
   },
 
+  evaluateSelection: async (userIds: number[], policyIds: number[]) => {
+    const response = await axios.post(`${API_BASE_URL}/evaluate/selection`, {
+      user_ids: userIds,
+      policy_ids: policyIds,
+    });
+    return response.data;
+  },
+
   getResults: async () => {
     const response = await axios.get(`${API_BASE_URL}/results`);
     return response.data;

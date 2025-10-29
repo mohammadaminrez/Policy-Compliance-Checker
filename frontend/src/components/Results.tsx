@@ -70,7 +70,8 @@ export const Results: React.FC = () => {
     setResults([]);
 
     try {
-      setError('Feature coming soon - evaluation with selection');
+      const data = await api.evaluateSelection(selectedUsers, selectedPolicies);
+      setResults(data.results || []);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Evaluation failed');
     } finally {
