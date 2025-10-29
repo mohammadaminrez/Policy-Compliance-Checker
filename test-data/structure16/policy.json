@@ -1,0 +1,9 @@
+{
+    "policyId": "P4004",
+    "policyName": "Contains Any Policy Bug",
+    "condition": {
+      "field": "tags",
+      "op": "contains_any",
+      "value": "aws|gcp" 
+    }
+  }

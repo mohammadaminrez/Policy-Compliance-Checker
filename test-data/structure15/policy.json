@@ -1,0 +1,9 @@
+{
+    "policyId": "P4003",
+    "policyName": "Delimiter Precedence Bug",
+    "condition": {
+      "field": "tags",
+      "op": "contains_any",
+      "value": ["azure"]
+    }
+  }

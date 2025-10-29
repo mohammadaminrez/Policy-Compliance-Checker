@@ -1,0 +1,9 @@
+[
+    { "userId": "u-401", "name": "User 1", "asset_id": 123 },
+    { "userId": "u-402", "name": "User 2", "asset_id": "hello" },
+    { "userId": "u-403", "name": "User 3", "asset_id": true },
+    { "userId": "u-404", "name": "User 4", "asset_id": "" },
+    { "userId": "u-405", "name": "User 5", "asset_id": 0 },
+    { "userId": "u-406", "name": "User 6", "asset_id": false },
+    { "userId": "u-407", "name": "User 7", "asset_id": null }
+  ]

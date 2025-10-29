@@ -120,17 +120,26 @@ class DynamicRuleEvaluator:
         "is_not_empty": lambda a, b: bool(a) if a is not None else False,
         "contains_any": lambda a, b: (
             (lambda actual_list, expected_list: any(x in set(expected_list) for x in actual_list))(
-                (
-                    a.split("|") if isinstance(a, str) and "|" in a else (
-                        a.split(",") if isinstance(a, str) and "," in a else (
-                            list(a) if isinstance(a, (list, set, tuple)) else ([a] if a is not None else [])
-                        )
-                    )
-                ),
-                (list(b) if isinstance(b, (list, set, tuple)) else ([b] if b is not None else []))
+                DynamicRuleEvaluator._coerce_to_list(a),
+                DynamicRuleEvaluator._coerce_to_list(b)
             )
         ) if b is not None else False,
     }
+
+    @staticmethod
+    def _coerce_to_list(value: Any) -> List[Any]:
+        """Coerce strings with '|' or ',' into list; pass through lists/sets/tuples; wrap scalars."""
+        if value is None:
+            return []
+        if isinstance(value, (list, set, tuple)):
+            return list(value)
+        if isinstance(value, str):
+            text = value.strip()
+            sep = "|" if "|" in text else ("," if "," in text else None)
+            if sep:
+                return [part.strip() for part in text.split(sep) if part.strip() != ""]
+            return [text]
+        return [value]
 
     @staticmethod
     def _try_parse_datetime(value: Any) -> datetime | None:

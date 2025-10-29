@@ -1,0 +1,8 @@
+{
+    "policyId": "P4002",
+    "policyName": "Is Not Empty (Truthiness Test)",
+    "condition": {
+      "field": "asset_id",
+      "op": "is_not_empty"
+    }
+  }

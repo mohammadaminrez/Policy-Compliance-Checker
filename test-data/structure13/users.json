@@ -1,0 +1,32 @@
+[
+    {
+      "userId": "u-301",
+      "name": "Ana",
+      "department": "Engineering",
+      "meta": {
+        "profile": {
+          "is_senior": true
+        }
+      }
+    },
+    {
+      "userId": "u-302",
+      "name": "Bob",
+      "department": "Engineering",
+      "meta": {
+        "profile": {
+          "is_senior": false
+        }
+      }
+    },
+    {
+      "userId": "u-303",
+      "name": "Cid",
+      "department": "Finance",
+      "meta": {
+        "profile": {
+          "is_senior": true
+        }
+      }
+    }
+  ]

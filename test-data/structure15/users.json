@@ -1,0 +1,12 @@
+[
+    {
+      "userId": "u-501",
+      "name": "User A",
+      "tags": "gcp,aws|azure"
+    },
+    {
+      "userId": "u-502",
+      "name": "User B",
+      "tags": "azure,gcp|aws"
+    }
+  ]
