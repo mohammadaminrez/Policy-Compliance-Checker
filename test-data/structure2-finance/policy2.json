@@ -1,0 +1,8 @@
+{
+  "rules": [
+    { "title": "Per-Transaction Limit", "attribute": "transaction_amount", "operator": "<=", "expected": 20000 },
+    { "title": "Account Not Frozen", "attribute": "account_status", "operator": "!=", "expected": "frozen" },
+    { "title": "Minimum Daily Balance", "attribute": "balance", "operator": ">=", "expected": 500 },
+    { "title": "Allowed Currencies", "attribute": "currency", "operator": "in", "expected": ["USD", "EUR", "GBP"] }
+  ]
+}

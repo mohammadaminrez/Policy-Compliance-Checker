@@ -1,0 +1,11 @@
+{
+  "title": "User Validation Schema - Variant C",
+  "rules": [
+    { "name": "Email Domain Allowed", "field": "email", "op": "regex", "value": "@example\\.(com|org)$" },
+    { "name": "Active Not Suspended", "not": { "field": "status", "op": "==", "value": "suspended" } },
+    { "name": "Has Preferences Or AutoRenew", "anyOf": [
+        { "field": "preferences", "op": "exists", "value": true },
+        { "field": "auto_renew", "op": "==", "value": true }
+    ]}
+  ]
+}

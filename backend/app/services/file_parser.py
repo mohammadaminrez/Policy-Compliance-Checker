@@ -2,6 +2,7 @@ import csv
 import json
 from typing import List, Dict, Any, Union
 from io import StringIO
+from app.core.config import settings
 
 
 class FileParser:
@@ -61,6 +62,7 @@ class FileParser:
         """
         Normalize any data structure to a list of dictionaries.
         Handles: single object, array, or nested structures.
+        Uses configurable wrapper keys and optional heuristic detection.
 
         Args:
             data: Any JSON-parsed data
@@ -71,10 +73,21 @@ class FileParser:
         if isinstance(data, list):
             return data
         elif isinstance(data, dict):
-            # Check for common array wrapper keys
-            for key in ["users", "data", "records", "items"]:
+            # Check for configured wrapper keys
+            for key in settings.USER_WRAPPER_KEYS:
                 if key in data and isinstance(data[key], list):
                     return data[key]
+
+            # Try heuristic detection if enabled
+            if settings.ENABLE_HEURISTIC_DETECTION:
+                from app.api.routes import _find_largest_array
+                largest_key, largest_array = _find_largest_array(
+                    data,
+                    settings.MIN_HEURISTIC_ARRAY_SIZE
+                )
+                if largest_key and len(largest_array) > 0:
+                    return largest_array
+
             # Otherwise, treat as single record
             return [data]
         else:

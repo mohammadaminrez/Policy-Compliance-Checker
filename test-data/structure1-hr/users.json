@@ -1,0 +1,64 @@
+{
+  "users": [
+    {
+      "user_id": "EMP001",
+      "name": "Alice Johnson",
+      "age": 32,
+      "employment_status": "active",
+      "department": "Engineering",
+      "salary": 85000,
+      "role": "Manager",
+      "level": "Senior"
+    },
+    {
+      "user_id": "EMP002",
+      "name": "Bob Smith",
+      "age": 28,
+      "employment_status": "active",
+      "department": "Sales",
+      "salary": 65000,
+      "role": "Associate",
+      "level": "Junior"
+    },
+    {
+      "user_id": "EMP003",
+      "name": "Charlie Brown",
+      "age": 17,
+      "employment_status": "active",
+      "department": "Marketing",
+      "salary": 40000,
+      "role": "Intern",
+      "level": "Entry"
+    },
+    {
+      "user_id": "EMP004",
+      "name": "Diana Prince",
+      "age": 45,
+      "employment_status": "inactive",
+      "department": "HR",
+      "salary": 95000,
+      "role": "Manager",
+      "level": "Senior"
+    },
+    {
+      "user_id": "EMP005",
+      "name": "Ethan Hunt",
+      "age": 38,
+      "employment_status": "active",
+      "department": "Operations",
+      "salary": 75000,
+      "role": "Specialist",
+      "level": "Mid"
+    },
+    {
+      "user_id": "EMP006",
+      "name": "Fiona Green",
+      "age": 29,
+      "employment_status": "active",
+      "department": "Finance",
+      "salary": 120000,
+      "role": "Analyst",
+      "level": "Senior"
+    }
+  ]
+}

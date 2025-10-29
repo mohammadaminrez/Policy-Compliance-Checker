@@ -1,0 +1,18 @@
+{
+  "policies": [
+    { "name": "Age Under 65", "description": "Retirement threshold", "field": "age", "op": "<=", "value": 65 },
+    { "name": "Active or Onboarding", "anyOf": [
+        { "field": "employment_status", "op": "==", "value": "active" },
+        { "field": "employment_status", "op": "==", "value": "onboarding" }
+    ]},
+    { "name": "Allowed Locations", "field": "location", "op": "in", "value": ["NY", "CA", "TX", "Remote"] },
+    { "name": "Experience Range", "allOf": [
+        { "field": "years_experience", "op": ">=", "value": 1 },
+        { "field": "years_experience", "op": "<=", "value": 40 }
+    ]},
+    { "name": "Lead Or Principal", "anyOf": [
+        { "field": "role", "op": "==", "value": "Lead" },
+        { "field": "level", "op": "==", "value": "Principal" }
+    ]}
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "requirements": [
+    { "id": "REQ201", "description": "Billing Active", "property": "billing.status", "operation": "==", "target": "active" },
+    { "id": "REQ202", "description": "Invoices Paid", "property": "billing.overdue_invoices", "operation": "==", "target": 0 },
+    { "id": "REQ203", "description": "Seats Within Plan", "property": "subscription.seats_used", "operation": "<=", "target": 100 }
+  ]
+}

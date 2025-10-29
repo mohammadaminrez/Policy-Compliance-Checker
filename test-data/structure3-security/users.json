@@ -1,0 +1,74 @@
+{
+  "records": [
+    {
+      "username": "alice.admin",
+      "email": "alice@company.com",
+      "security": {
+        "mfa_enabled": true,
+        "password_strength": "very_strong",
+        "failed_logins": 0
+      },
+      "access": {
+        "level": "admin",
+        "permissions": ["read", "write", "delete"]
+      },
+      "last_login_days": 5
+    },
+    {
+      "username": "bob.user",
+      "email": "bob@company.com",
+      "security": {
+        "mfa_enabled": false,
+        "password_strength": "weak",
+        "failed_logins": 2
+      },
+      "access": {
+        "level": "standard",
+        "permissions": ["read"]
+      },
+      "last_login_days": 120
+    },
+    {
+      "username": "charlie.dev",
+      "email": "charlie@company.com",
+      "security": {
+        "mfa_enabled": true,
+        "password_strength": "strong",
+        "failed_logins": 1
+      },
+      "access": {
+        "level": "standard",
+        "permissions": ["read", "write"]
+      },
+      "last_login_days": 15
+    },
+    {
+      "username": "diana.super",
+      "email": "diana@company.com",
+      "security": {
+        "mfa_enabled": true,
+        "password_strength": "very_strong",
+        "failed_logins": 0
+      },
+      "access": {
+        "level": "superadmin",
+        "permissions": ["read", "write", "delete", "admin"]
+      },
+      "last_login_days": 1
+    },
+    {
+      "username": "eve.guest",
+      "email": "eve@company.com",
+      "security": {
+        "mfa_enabled": false,
+        "password_strength": "medium",
+        "failed_logins": 8
+      },
+      "access": {
+        "level": "guest",
+        "permissions": []
+      },
+      "last_login_days": 200
+    }
+  ]
+}

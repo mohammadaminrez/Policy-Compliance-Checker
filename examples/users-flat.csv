@@ -1,4 +1,0 @@
-user_id,password_length,mfa_enabled,department
-flat-001,14,true,Security
-flat-002,10,true,Engineering
-flat-003,16,false,Finance

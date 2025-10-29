@@ -1,0 +1,8 @@
+{
+  "metadata": { "variant": "B" },
+  "compliance_validations": [
+    { "validation_name": "Age 18+", "field": "user_age", "op": ">=", "value": 18 },
+    { "validation_name": "SMS Verified", "field": "phone_verified", "op": "==", "value": true },
+    { "validation_name": "Country Allowed", "field": "country", "op": "in", "value": ["US", "CA", "AU"] }
+  ]
+}

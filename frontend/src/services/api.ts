@@ -45,10 +45,10 @@ export const api = {
     return response.data;
   },
 
-  evaluateSelection: async (userIds: number[], policyIds: number[]) => {
-    const response = await axios.post(`${API_BASE_URL}/evaluate/selection`, {
-      user_ids: userIds,
+  evaluateByIds: async (policyIds: number[], userIds: number[]) => {
+    const response = await axios.post(`${API_BASE_URL}/evaluate/ids`, {
       policy_ids: policyIds,
+      user_ids: userIds
     });
     return response.data;
   },

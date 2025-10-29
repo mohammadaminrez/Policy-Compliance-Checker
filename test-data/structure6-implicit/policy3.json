@@ -1,0 +1,5 @@
+[
+  { "name": "Suspended Block", "status": "blocked" },
+  { "name": "Country US", "country": "US" },
+  { "name": "Has Phone", "phone", "exists": true }
+]

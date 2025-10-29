@@ -1,0 +1,7 @@
+{
+  "checks": [
+    { "policy_id": "SEC101", "policy_name": "Device Encrypted", "key": "device.encrypted", "op": "==", "compare_to": true },
+    { "policy_id": "SEC102", "policy_name": "Screen Lock Timeout", "key": "device.screen_lock_minutes", "op": "<=", "compare_to": 10 },
+    { "policy_id": "SEC103", "policy_name": "No Root/Jailbreak", "key": "device.compromised", "op": "==", "compare_to": false }
+  ]
+}

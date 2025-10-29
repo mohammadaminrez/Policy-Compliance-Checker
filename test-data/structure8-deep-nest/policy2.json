@@ -1,0 +1,18 @@
+{
+  "policy_sets": {
+    "version": "2.1",
+    "mandatory": {
+      "category": "security",
+      "validations": [
+        { "name": "Password Rotation Days", "attribute": "security.password.rotation_days", "op": "<=", "expected": 90 },
+        { "name": "MFA Methods", "attribute": "security.two_factor.methods", "op": "contains", "expected": "totp" }
+      ]
+    },
+    "optional": {
+      "category": "ux",
+      "checks": [
+        { "name": "Dark Mode Preference", "attribute": "preferences.ui.dark_mode", "op": "==", "expected": true }
+      ]
+    }
+  }
+}

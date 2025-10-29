@@ -1,0 +1,7 @@
+{
+  "requirements": [
+    { "id": "REQ101", "description": "Email Verified", "property": "account.email_verified", "operation": "==", "target": true },
+    { "id": "REQ102", "description": "Storage Cap", "property": "usage.storage_gb", "operation": "<=", "target": 200 },
+    { "id": "REQ103", "description": "Tickets Under SLA", "property": "support.open_tickets", "operation": "<=", "target": 5 }
+  ]
+}

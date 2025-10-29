@@ -1,0 +1,50 @@
+{
+  "rules": [
+    {
+      "title": "Transaction Amount Limit",
+      "attribute": "transaction_amount",
+      "operator": "<=",
+      "expected": 10000
+    },
+    {
+      "title": "Account Status Active",
+      "attribute": "account_status",
+      "operator": "==",
+      "expected": "active"
+    },
+    {
+      "title": "Minimum Balance Requirement",
+      "attribute": "balance",
+      "operator": ">=",
+      "expected": 1000
+    },
+    {
+      "title": "Valid Transaction Type",
+      "attribute": "transaction_type",
+      "operator": "in",
+      "expected": ["transfer", "payment", "withdrawal", "deposit"]
+    },
+    {
+      "title": "High-Value Transaction Check",
+      "description": "For amounts over 5000, must have verified status",
+      "allOf": [
+        {
+          "attribute": "transaction_amount",
+          "operator": ">",
+          "expected": 5000
+        },
+        {
+          "attribute": "verified_account",
+          "operator": "==",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "title": "Risk Level Acceptable",
+      "attribute": "risk_level",
+      "operator": "in",
+      "expected": ["low", "medium"]
+    }
+  ]
+}

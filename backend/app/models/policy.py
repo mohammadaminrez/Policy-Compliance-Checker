@@ -30,6 +30,6 @@ class EvaluationResult(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_data = Column(JSON, nullable=False)  # Raw user data evaluated
     policy_data = Column(JSON, nullable=False)  # Raw policy used
-    passed = Column(String, nullable=False)  # Store as JSON boolean
+    passed = Column(String, nullable=False)  # Boolean stored as string for SQLite compatibility
     details = Column(JSON)  # Detailed evaluation breakdown
     evaluated_at = Column(DateTime, default=datetime.utcnow)

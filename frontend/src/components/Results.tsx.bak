@@ -1,27 +1,17 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 
-interface PolicyFileGroup {
-  policy_file: string;
-  policy_id: number;
-  total_rules: number;
-  passed_rules: number;
-  failed_rules: number;
-  rules: Array<{
-    rule: any;
-    rule_index: number;
-    passed: boolean;
-    details: any;
-  }>;
-}
-
 interface EvaluationResult {
   user_data: any;
   all_passed: boolean;
-  total_rules: number;
-  passed_rules: number;
-  failed_rules: number;
-  policy_files: PolicyFileGroup[];
+  total_policies: number;
+  passed_policies: number;
+  failed_policies: number;
+  policies_evaluated: Array<{
+    policy: any;
+    passed: boolean;
+    details: any;
+  }>;
   failed_conditions?: Array<{
     field: string;
     operator: string;
@@ -104,10 +94,6 @@ export const Results = () => {
   const getUserLabel = (result: EvaluationResult) => {
     const userData = result.user_data;
     return userData.user_id || userData.id || userData.email || userData.name || 'User';
-  };
-
-  const getRuleName = (rule: any, index: number) => {
-    return rule.name || rule.title || rule.validation_name || rule.policy_name || `Rule #${index + 1}`;
   };
 
   const filteredResults = results.filter(r => {
@@ -239,14 +225,10 @@ export const Results = () => {
                     <span className="result-user">
                       <strong>User:</strong> {getUserLabel(result)}
                     </span>
-                    <div className="policy-files-summary">
-                      {result.policy_files.map((policyFile, pfIdx) => (
-                        <span key={pfIdx} className="policy-file-summary">
-                          <strong>{policyFile.policy_file}:</strong> {policyFile.total_rules} rules
-                          {' '}({policyFile.passed_rules} passed, {policyFile.failed_rules} failed)
-                        </span>
-                      ))}
-                    </div>
+                    <span className="result-policy">
+                      <strong>Policies Evaluated:</strong> {result.total_policies}
+                      {' '}({result.passed_policies} passed, {result.failed_policies} failed)
+                    </span>
                   </div>
                   <div className="result-status-container">
                     <span className={`result-status ${result.all_passed ? 'passed' : 'failed'}`}>
@@ -287,25 +269,20 @@ export const Results = () => {
                       <pre>{JSON.stringify(result.user_data, null, 2)}</pre>
                     </div>
 
-                    {result.policy_files.map((policyFile, pfIdx) => (
-                      <div key={pfIdx} className="detail-section">
-                        <h4>
-                          Policy File: {policyFile.policy_file}
-                          {' '}({policyFile.total_rules} rules - {policyFile.passed_rules} passed, {policyFile.failed_rules} failed)
-                        </h4>
-                        {policyFile.rules.map((ruleResult, rIdx) => (
-                          <div key={rIdx} className={`policy-result ${ruleResult.passed ? 'passed' : 'failed'}`}>
-                            <div className="policy-result-header">
-                              <strong>Rule #{ruleResult.rule_index + 1}:</strong> {getRuleName(ruleResult.rule, ruleResult.rule_index)}
-                              <span className={`policy-status ${ruleResult.passed ? 'passed' : 'failed'}`}>
-                                {ruleResult.passed ? '✓' : '✗'}
-                              </span>
-                            </div>
-                            <pre>{JSON.stringify(ruleResult.rule, null, 2)}</pre>
+                    <div className="detail-section">
+                      <h4>Policy Results ({result.policies_evaluated.length}):</h4>
+                      {result.policies_evaluated.map((policyResult, pIdx) => (
+                        <div key={pIdx} className={`policy-result ${policyResult.passed ? 'passed' : 'failed'}`}>
+                          <div className="policy-result-header">
+                            <strong>Policy #{pIdx + 1}:</strong> {policyResult.policy.name || policyResult.policy.title || 'Unnamed Policy'}
+                            <span className={`policy-status ${policyResult.passed ? 'passed' : 'failed'}`}>
+                              {policyResult.passed ? '✓' : '✗'}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    ))}
+                          <pre>{JSON.stringify(policyResult.policy, null, 2)}</pre>
+                        </div>
+                      ))}
+                    </div>
 
                     {result.failed_conditions && result.failed_conditions.length > 5 && (
                       <div className="detail-section">

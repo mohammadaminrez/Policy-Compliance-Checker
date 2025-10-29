@@ -1,0 +1,39 @@
+{
+  "policy_sets": {
+    "version": "2.0",
+    "mandatory": {
+      "category": "security",
+      "validations": [
+        {
+          "name": "Password Complexity",
+          "attribute": "security.password.strength",
+          "op": "==",
+          "expected": "strong"
+        },
+        {
+          "name": "2FA Requirement",
+          "attribute": "security.two_factor.enabled",
+          "op": "==",
+          "expected": true
+        },
+        {
+          "name": "Session Timeout",
+          "attribute": "security.session.timeout_minutes",
+          "op": "<=",
+          "expected": 30
+        }
+      ]
+    },
+    "optional": {
+      "category": "preferences",
+      "checks": [
+        {
+          "name": "Email Notifications",
+          "attribute": "preferences.notifications.email",
+          "op": "==",
+          "expected": true
+        }
+      ]
+    }
+  }
+}

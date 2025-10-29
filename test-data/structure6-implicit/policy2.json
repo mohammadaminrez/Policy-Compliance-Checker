@@ -1,0 +1,5 @@
+[
+  { "name": "Verified Active", "status": "active", "verified": true },
+  { "name": "Tier Business", "tier": "business" },
+  { "name": "Adult Or Consent", "age": 21 }
+]

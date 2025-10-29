@@ -1,0 +1,11 @@
+{
+  "title": "User Validation Schema - Variant B",
+  "rules": [
+    { "name": "Teen or Consent", "anyOf": [
+        { "field": "age", "op": ">=", "value": 16 },
+        { "field": "parent_consent", "op": "==", "value": true }
+    ]},
+    { "name": "Has Username", "field": "username", "op": "exists", "value": true },
+    { "name": "Country Allowed", "field": "country", "op": "in", "value": ["US", "DE", "JP"] }
+  ]
+}

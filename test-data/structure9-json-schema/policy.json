@@ -1,0 +1,97 @@
+{
+  "title": "User Validation Schema",
+  "description": "Validates user records using JSON Schema-like structure",
+  "rules": [
+    {
+      "name": "Adult User with Email",
+      "description": "User must be 18+ AND have email",
+      "allOf": [
+        {
+          "field": "age",
+          "op": ">=",
+          "value": 18
+        },
+        {
+          "field": "email",
+          "op": "exists",
+          "value": true
+        }
+      ]
+    },
+    {
+      "name": "Premium or Verified",
+      "description": "User must be EITHER premium OR verified",
+      "anyOf": [
+        {
+          "field": "tier",
+          "op": "==",
+          "value": "premium"
+        },
+        {
+          "field": "verified",
+          "op": "==",
+          "value": true
+        }
+      ]
+    },
+    {
+      "name": "Not Suspended",
+      "description": "User must NOT be suspended",
+      "not": {
+        "field": "status",
+        "op": "==",
+        "value": "suspended"
+      }
+    },
+    {
+      "name": "Complex Nested Logic",
+      "description": "(age >= 18 AND email exists) OR (parent_consent == true)",
+      "anyOf": [
+        {
+          "allOf": [
+            {
+              "field": "age",
+              "op": ">=",
+              "value": 18
+            },
+            {
+              "field": "email",
+              "op": "exists",
+              "value": true
+            }
+          ]
+        },
+        {
+          "field": "parent_consent",
+          "op": "==",
+          "value": true
+        }
+      ]
+    },
+    {
+      "name": "Active User Requirements",
+      "description": "Active users need specific attributes",
+      "allOf": [
+        {
+          "field": "status",
+          "op": "==",
+          "value": "active"
+        },
+        {
+          "anyOf": [
+            {
+              "field": "last_login_days",
+              "op": "<=",
+              "value": 30
+            },
+            {
+              "field": "auto_renew",
+              "op": "==",
+              "value": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

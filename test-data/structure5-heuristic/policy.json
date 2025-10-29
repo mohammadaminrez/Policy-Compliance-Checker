@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "created_by": "compliance_team",
+    "last_updated": "2024-10-29"
+  },
+  "compliance_validations": [
+    {
+      "validation_name": "GDPR Age Consent",
+      "field": "user_age",
+      "op": ">=",
+      "value": 16
+    },
+    {
+      "validation_name": "Privacy Policy Accepted",
+      "field": "privacy_accepted",
+      "op": "==",
+      "value": true
+    },
+    {
+      "validation_name": "Terms of Service Accepted",
+      "field": "terms_accepted",
+      "op": "==",
+      "value": true
+    },
+    {
+      "validation_name": "Data Processing Consent",
+      "field": "data_processing_consent",
+      "op": "==",
+      "value": true
+    },
+    {
+      "validation_name": "Valid Country",
+      "field": "country",
+      "op": "in",
+      "value": ["US", "UK", "CA", "DE", "FR", "ES", "IT", "AU"]
+    },
+    {
+      "validation_name": "Email Verified",
+      "field": "email_verified",
+      "op": "==",
+      "value": true
+    },
+    {
+      "validation_name": "Complete Profile Check",
+      "description": "User must accept both terms and privacy policy",
+      "allOf": [
+        {
+          "field": "privacy_accepted",
+          "op": "==",
+          "value": true
+        },
+        {
+          "field": "terms_accepted",
+          "op": "==",
+          "value": true
+        }
+      ]
+    }
+  ],
+  "info": {
+    "description": "GDPR compliance checks",
+    "category": "legal"
+  }
+}

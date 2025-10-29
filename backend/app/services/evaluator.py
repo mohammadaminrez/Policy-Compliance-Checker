@@ -10,13 +10,90 @@ class DynamicRuleEvaluator:
     """
 
     # Flexible key names for field identification
-    FIELD_KEYS = ["field", "attribute", "key", "name", "property"]
+    FIELD_KEYS = ["field", "attribute", "key", "name", "property", "condition", "metric", "factor", "dimension"]
 
     # Flexible key names for operator identification
-    OP_KEYS = ["op", "operator", "operation", "equals", "is", "comparison"]
+    OP_KEYS = ["op", "operator", "operation", "equals", "is", "comparison", "must_be", "check"]
 
     # Flexible key names for value identification
-    VALUE_KEYS = ["value", "expected", "target", "compare_to"]
+    VALUE_KEYS = ["value", "expected", "target", "compare_to", "threshold", "limit", "minimum", "maximum"]
+
+    # Operator aliases mapping (natural language to symbols)
+    OPERATOR_ALIASES: Dict[str, str] = {
+        # Equality
+        "equals": "==",
+        "equal": "==",
+        "is": "==",
+        "is_equal_to": "==",
+        "equal_to": "==",
+        "eq": "==",
+        # Inequality
+        "not_equal": "!=",
+        "not_equals": "!=",
+        "is_not": "!=",
+        "not_equal_to": "!=",
+        "ne": "!=",
+        "neq": "!=",
+        # Greater than
+        "greater_than": ">",
+        "greater": ">",
+        "gt": ">",
+        "more_than": ">",
+        "above": ">",
+        # Less than
+        "less_than": "<",
+        "less": "<",
+        "lt": "<",
+        "below": "<",
+        "under": "<",
+        # Greater than or equal
+        "greater_than_or_equal": ">=",
+        "greater_than_or_equal_to": ">=",
+        "gte": ">=",
+        "ge": ">=",
+        "at_least": ">=",
+        "minimum": ">=",
+        # Less than or equal
+        "less_than_or_equal": "<=",
+        "less_than_or_equal_to": "<=",
+        "lte": "<=",
+        "le": "<=",
+        "at_most": "<=",
+        "maximum": "<=",
+        # Containment
+        "in": "in",
+        "within": "in",
+        "one_of": "in",
+        "any_of": "in",
+        "not_in": "not_in",
+        "not_within": "not_in",
+        "none_of": "not_in",
+        # String operations
+        "contains": "contains",
+        "includes": "contains",
+        "has": "contains",
+        "not_contains": "not_contains",
+        "does_not_contain": "not_contains",
+        "excludes": "not_contains",
+        "starts_with": "starts_with",
+        "begins_with": "starts_with",
+        "ends_with": "ends_with",
+        "matches": "regex",
+        "regex": "regex",
+        "pattern": "regex",
+        # Existence
+        "exists": "exists",
+        "is_present": "exists",
+        "has_value": "exists",
+        "not_exists": "not_exists",
+        "is_absent": "not_exists",
+        "no_value": "not_exists",
+        "is_empty": "is_empty",
+        "empty": "is_empty",
+        "is_not_empty": "is_not_empty",
+        "not_empty": "is_not_empty",
+        "has_content": "is_not_empty",
+    }
 
     # Safe operator registry - NO eval() or code execution
     OPS: Dict[str, Callable] = {
@@ -129,6 +206,7 @@ class DynamicRuleEvaluator:
         """
         Evaluate a single condition (leaf rule).
         Dynamically discovers which keys represent field/operator/value.
+        Supports implicit operators (defaults to equality if no operator found).
         """
         # Dynamically find field name
         field = cls._find_key_value(rule, cls.FIELD_KEYS)
@@ -139,11 +217,28 @@ class DynamicRuleEvaluator:
         # Dynamically find expected value
         expected = cls._find_key_value(rule, cls.VALUE_KEYS)
 
+        # IMPLICIT OPERATOR SUPPORT:
+        # If no explicit operator/value pair found, treat rule as key-value pairs
+        # Example: {"age": 18, "status": "active"} -> age==18 AND status=="active"
+        if field is None and operator is None and expected is None:
+            # This is an implicit equality check for all key-value pairs
+            return cls._evaluate_implicit_conditions(user, rule)
+
+        # DEFAULT OPERATOR: If field and value found but no operator, assume equality
+        if field and expected is not None and operator is None:
+            operator = "=="
+
+        # Normalize operator (handle natural language aliases)
+        if operator:
+            operator_normalized = cls._normalize_operator(operator)
+        else:
+            operator_normalized = None
+
         # Get actual value from user data (handle nested keys with dot notation)
         actual = cls._get_nested_value(user, field) if field else None
 
         # Apply operator
-        op_func = cls.OPS.get(operator)
+        op_func = cls.OPS.get(operator_normalized) if operator_normalized else None
 
         if not op_func:
             # Unknown operator - fail safe
@@ -151,6 +246,7 @@ class DynamicRuleEvaluator:
                 "type": "condition",
                 "field": field,
                 "operator": operator,
+                "operator_normalized": operator_normalized,
                 "expected": expected,
                 "actual": actual,
                 "passed": False,
@@ -165,7 +261,7 @@ class DynamicRuleEvaluator:
             return passed, {
                 "type": "condition",
                 "field": field,
-                "operator": operator,
+                "operator": operator_normalized,
                 "expected": expected,
                 "actual": actual,
                 "passed": False,
@@ -175,10 +271,65 @@ class DynamicRuleEvaluator:
         return passed, {
             "type": "condition",
             "field": field,
-            "operator": operator,
+            "operator": operator_normalized,
             "expected": expected,
             "actual": actual,
             "passed": passed
+        }
+
+    @classmethod
+    def _normalize_operator(cls, operator: str) -> str:
+        """
+        Normalize operator to canonical form.
+        Handles natural language operators like 'greater_than' -> '>'
+        """
+        if not operator:
+            return "=="
+
+        # Convert to lowercase and replace spaces with underscores
+        normalized = str(operator).lower().strip().replace(" ", "_")
+
+        # Check if it's an alias
+        if normalized in cls.OPERATOR_ALIASES:
+            return cls.OPERATOR_ALIASES[normalized]
+
+        # Return as-is if already canonical
+        return normalized
+
+    @classmethod
+    def _evaluate_implicit_conditions(cls, user: Dict[str, Any], rule: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
+        """
+        Handle implicit operator format where the rule is just key-value pairs.
+        Example: {"age": 18, "status": "active"} means age==18 AND status=="active"
+        """
+        # Filter out metadata keys (description, name, title, id, etc.)
+        metadata_keys = {"description", "name", "title", "id", "policy_id", "rule_id", "validation_name"}
+
+        conditions = []
+        for key, value in rule.items():
+            if key not in metadata_keys:
+                # Each key-value pair is an equality check
+                actual = cls._get_nested_value(user, key)
+                passed = actual == value
+                conditions.append({
+                    "field": key,
+                    "operator": "==",
+                    "expected": value,
+                    "actual": actual,
+                    "passed": passed
+                })
+
+        if not conditions:
+            # No valid conditions found
+            return True, {"result": "no_implicit_conditions"}
+
+        # All conditions must pass (implicit AND)
+        all_passed = all(c["passed"] for c in conditions)
+
+        return all_passed, {
+            "type": "implicit_conditions",
+            "passed": all_passed,
+            "conditions": conditions
         }
 
     @classmethod

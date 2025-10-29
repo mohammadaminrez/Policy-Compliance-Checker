@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.models.policy import Policy, EvaluationResult
 from app.services.file_parser import FileParser
 from app.services.evaluator import DynamicRuleEvaluator
@@ -25,10 +26,47 @@ def _derive_label(data: Dict[str, Any], preferred_keys: List[str]) -> str | None
     return None
 
 
+def _find_largest_array(data: Dict[str, Any], min_size: int = 1, max_depth: int = 3) -> tuple[str | None, List[Any]]:
+    """
+    Heuristic: Find the largest array in a dictionary with support for deep nesting.
+    Recursively searches nested objects up to max_depth levels.
+    Returns (key_path, array) or (None, []) if none found.
+    Key_path uses dot notation for nested keys: "parent.child.array"
+    """
+    def _search_recursive(obj: Any, depth: int = 0, path: str = "") -> List[tuple[str, List[Any]]]:
+        """Recursively search for arrays in nested structures"""
+        results = []
+
+        if not isinstance(obj, dict) or depth > max_depth:
+            return results
+
+        for key, value in obj.items():
+            current_path = f"{path}.{key}" if path else key
+
+            if isinstance(value, list) and len(value) >= min_size:
+                # Found an array
+                results.append((current_path, value))
+            elif isinstance(value, dict):
+                # Recurse into nested object
+                results.extend(_search_recursive(value, depth + 1, current_path))
+
+        return results
+
+    # Find all arrays
+    all_arrays = _search_recursive(data, 0, "")
+
+    if not all_arrays:
+        return None, []
+
+    # Return the largest one
+    largest = max(all_arrays, key=lambda x: len(x[1]))
+    return largest[0], largest[1]
+
+
 def _build_user_contexts_from_file(users: List[Dict[str, Any]], source: str) -> List[Dict[str, Any]]:
     contexts: List[Dict[str, Any]] = []
     for index, user in enumerate(users):
-        label = _derive_label(user, ["user_id", "id", "email", "username", "name"])
+        label = _derive_label(user, settings.USER_LABEL_KEYS)
         contexts.append(
             {
                 "label": label or f"User #{index + 1}",
@@ -47,13 +85,15 @@ def _normalize_policies_from_payload(
     """
     Normalize arbitrary policy payloads into a flat list of policy dictionaries
     while preserving human-readable context.
+
+    Uses configurable wrapper keys and optional heuristic detection.
     """
     policies: List[Dict[str, Any]] = []
     contexts: List[Dict[str, Any]] = []
 
     def _append_policy(entry: Dict[str, Any], extra: Dict[str, Any] | None = None):
         index = len(policies)
-        label = _derive_label(entry, ["name", "title", "id", "policy"])
+        label = _derive_label(entry, settings.POLICY_LABEL_KEYS)
         context: Dict[str, Any] = {
             "label": label or f"Policy #{index + 1}",
             "source": source,
@@ -67,15 +107,35 @@ def _normalize_policies_from_payload(
         contexts.append(context)
 
     if isinstance(payload, list):
+        # Payload is already an array
         for position, item in enumerate(payload):
             if isinstance(item, dict):
                 _append_policy(item, {"position": position})
     elif isinstance(payload, dict):
-        if "policies" in payload and isinstance(payload["policies"], list):
-            for position, item in enumerate(payload["policies"]):
-                if isinstance(item, dict):
-                    _append_policy(item, {"section": "policies", "position": position})
-        else:
+        # Try configured wrapper keys first
+        found_wrapper = False
+        for key in settings.POLICY_WRAPPER_KEYS:
+            if key in payload and isinstance(payload[key], list):
+                for position, item in enumerate(payload[key]):
+                    if isinstance(item, dict):
+                        _append_policy(item, {"section": key, "position": position})
+                found_wrapper = True
+                break
+
+        # If no wrapper key found and heuristic detection enabled
+        if not found_wrapper and settings.ENABLE_HEURISTIC_DETECTION:
+            largest_key, largest_array = _find_largest_array(
+                payload,
+                settings.MIN_HEURISTIC_ARRAY_SIZE
+            )
+            if largest_key and len(largest_array) > 0:
+                for position, item in enumerate(largest_array):
+                    if isinstance(item, dict):
+                        _append_policy(item, {"section": largest_key, "position": position, "detected": "heuristic"})
+                found_wrapper = True
+
+        # Otherwise treat entire dict as single policy
+        if not found_wrapper:
             _append_policy(payload, None)
     else:
         raise ValueError("Policy file must contain object or array")
@@ -226,6 +286,199 @@ async def delete_users(user_id: int, db: Session = Depends(get_db)):
     return {"message": "User data deleted successfully"}
 
 
+@router.post("/evaluate/ids")
+async def evaluate_by_ids(
+    policy_ids: List[int],
+    user_ids: List[int],
+    db: Session = Depends(get_db)
+):
+    """
+    Evaluate selected users against selected policies from database.
+    """
+    try:
+        from app.models.policy import UserData
+        from app.services.evaluator import DynamicRuleEvaluator
+
+        # Fetch selected policies
+        policies_data = db.query(Policy).filter(Policy.id.in_(policy_ids)).all()
+        if not policies_data:
+            raise ValueError("No policies found with given IDs")
+
+        # Fetch selected user data
+        users_data = db.query(UserData).filter(UserData.id.in_(user_ids)).all()
+        if not users_data:
+            raise ValueError("No user data found with given IDs")
+
+        # Collect all users from all selected user files using dynamic extraction
+        all_users = []
+        for user_data in users_data:
+            raw = user_data.raw
+            if isinstance(raw, dict):
+                found_wrapper = False
+                # Try configured wrapper keys
+                for key in settings.USER_WRAPPER_KEYS:
+                    if key in raw and isinstance(raw[key], list):
+                        all_users.extend(raw[key])
+                        found_wrapper = True
+                        break
+
+                # Try heuristic detection if enabled
+                if not found_wrapper and settings.ENABLE_HEURISTIC_DETECTION:
+                    largest_key, largest_array = _find_largest_array(
+                        raw,
+                        settings.MIN_HEURISTIC_ARRAY_SIZE
+                    )
+                    if largest_key and len(largest_array) > 0:
+                        all_users.extend(largest_array)
+                        found_wrapper = True
+
+                # Otherwise treat as single user
+                if not found_wrapper:
+                    all_users.append(raw)
+            elif isinstance(raw, list):
+                all_users.extend(raw)
+
+        # Collect all policies with metadata (which file they came from)
+        all_policies_with_meta = []
+        for policy_db in policies_data:
+            policy_raw = policy_db.raw
+            policy_file_name = policy_db.name  # The uploaded filename
+
+            # Normalize to list if needed
+            extracted_rules = []
+            if isinstance(policy_raw, dict):
+                found_wrapper = False
+                # Try configured wrapper keys
+                for key in settings.POLICY_WRAPPER_KEYS:
+                    if key in policy_raw and isinstance(policy_raw[key], list):
+                        extracted_rules = policy_raw[key]
+                        found_wrapper = True
+                        break
+
+                # Try heuristic detection if enabled
+                if not found_wrapper and settings.ENABLE_HEURISTIC_DETECTION:
+                    largest_key, largest_array = _find_largest_array(
+                        policy_raw,
+                        settings.MIN_HEURISTIC_ARRAY_SIZE
+                    )
+                    if largest_key and len(largest_array) > 0:
+                        extracted_rules = largest_array
+                        found_wrapper = True
+
+                # Otherwise treat as single policy
+                if not found_wrapper:
+                    extracted_rules = [policy_raw]
+            elif isinstance(policy_raw, list):
+                extracted_rules = policy_raw
+
+            # Add metadata to each rule
+            for idx, rule in enumerate(extracted_rules):
+                all_policies_with_meta.append({
+                    "rule": rule,
+                    "policy_file": policy_file_name,
+                    "rule_index": idx,
+                    "policy_id": policy_db.id
+                })
+
+        # Extract just the rules for evaluation
+        all_policies = [p["rule"] for p in all_policies_with_meta]
+
+        # Evaluate
+        raw_results = DynamicRuleEvaluator.evaluate_users_against_policies(all_users, all_policies)
+
+        # Aggregate results by user, grouped by policy file
+        user_results = {}
+        for idx, result in enumerate(raw_results):
+            user_key = str(result["user_data"])  # Use user data as key
+            # Map back to the correct policy metadata using policy_index
+            policy_index = result.get("policy_index")
+            if policy_index is None or policy_index < 0 or policy_index >= len(all_policies_with_meta):
+                # Skip inconsistent result to avoid index errors
+                continue
+            policy_meta = all_policies_with_meta[policy_index]
+
+            if user_key not in user_results:
+                user_results[user_key] = {
+                    "user_data": result["user_data"],
+                    "policy_files": {},  # Group by policy file
+                    "total_rules": 0,
+                    "passed_rules": 0,
+                    "failed_rules": 0,
+                    "all_passed": True,
+                    "failed_conditions": []
+                }
+
+            policy_file = policy_meta["policy_file"]
+
+            # Initialize policy file group if not exists
+            if policy_file not in user_results[user_key]["policy_files"]:
+                user_results[user_key]["policy_files"][policy_file] = {
+                    "policy_file": policy_file,
+                    "policy_id": policy_meta["policy_id"],
+                    "rules": [],
+                    "total_rules": 0,
+                    "passed_rules": 0,
+                    "failed_rules": 0
+                }
+
+            # Add rule result to policy file group
+            policy_file_group = user_results[user_key]["policy_files"][policy_file]
+            policy_file_group["rules"].append({
+                "rule": result["policy"],
+                "rule_index": policy_meta["rule_index"],
+                "passed": result["passed"],
+                "details": result["details"]
+            })
+            policy_file_group["total_rules"] += 1
+            user_results[user_key]["total_rules"] += 1
+
+            if result["passed"]:
+                policy_file_group["passed_rules"] += 1
+                user_results[user_key]["passed_rules"] += 1
+            else:
+                policy_file_group["failed_rules"] += 1
+                user_results[user_key]["failed_rules"] += 1
+                user_results[user_key]["all_passed"] = False
+                # Collect failed conditions
+                if "failed_conditions" in result:
+                    user_results[user_key]["failed_conditions"].extend(result["failed_conditions"])
+
+        # Convert to list
+        aggregated_results = []
+        for user_data in user_results.values():
+            # Convert policy_files dict to list
+            user_data["policy_files"] = list(user_data["policy_files"].values())
+            aggregated_results.append(user_data)
+
+        # Store aggregated results
+        for result in aggregated_results:
+            eval_result = EvaluationResult(
+                user_data=result["user_data"],
+                policy_data={"policy_files": result["policy_files"]},
+                passed=str(result["all_passed"]),
+                details={
+                    "total_rules": result["total_rules"],
+                    "passed_rules": result["passed_rules"],
+                    "failed_rules": result["failed_rules"],
+                    "failed_conditions": result["failed_conditions"]
+                }
+            )
+            db.add(eval_result)
+
+        db.commit()
+
+        return {
+            "message": "Evaluation completed",
+            "total_users": len(aggregated_results),
+            "results": aggregated_results
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Evaluation failed: {str(e)}")
+
+
 @router.post("/evaluate")
 async def evaluate(
     users_file: UploadFile = File(...),
@@ -233,7 +486,7 @@ async def evaluate(
     db: Session = Depends(get_db)
 ):
     """
-    Evaluate users against policies.
+    Evaluate users against policies from file upload.
     Both files are schema-agnostic.
 
     Returns evaluation results with full transparency.
@@ -384,7 +637,7 @@ async def evaluate_by_selection(
 
             def _append_user(entry: Dict[str, Any], position: int | None = None):
                 nonlocal user_global_index
-                label = _derive_label(entry, ["user_id", "id", "email", "username", "name"])
+                label = _derive_label(entry, settings.USER_LABEL_KEYS)
                 context: Dict[str, Any] = {
                     "label": label or f"User #{user_global_index + 1}",
                     "source": source_label,
@@ -401,13 +654,28 @@ async def evaluate_by_selection(
 
             if isinstance(raw, dict):
                 extracted = False
-                for key in ["users", "data", "records", "items"]:
+                # Try configured wrapper keys
+                for key in settings.USER_WRAPPER_KEYS:
                     if key in raw and isinstance(raw[key], list):
                         for position, entry in enumerate(raw[key]):
                             if isinstance(entry, dict):
                                 _append_user(entry, position=position)
                         extracted = True
                         break
+
+                # Try heuristic detection if enabled
+                if not extracted and settings.ENABLE_HEURISTIC_DETECTION:
+                    largest_key, largest_array = _find_largest_array(
+                        raw,
+                        settings.MIN_HEURISTIC_ARRAY_SIZE
+                    )
+                    if largest_key and len(largest_array) > 0:
+                        for position, entry in enumerate(largest_array):
+                            if isinstance(entry, dict):
+                                _append_user(entry, position=position)
+                        extracted = True
+
+                # Otherwise treat as single user
                 if not extracted:
                     if isinstance(raw, dict):
                         _append_user(raw)

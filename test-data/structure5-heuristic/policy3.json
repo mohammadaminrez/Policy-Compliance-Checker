@@ -1,0 +1,8 @@
+{
+  "metadata": { "variant": "C" },
+  "compliance_validations": [
+    { "validation_name": "Age 21+", "field": "user_age", "op": ">=", "value": 21 },
+    { "validation_name": "Marketing Opt-in Not Required", "field": "marketing_opt_in", "op": "!=", "value": false },
+    { "validation_name": "Email Verified", "field": "email_verified", "op": "==", "value": true }
+  ]
+}

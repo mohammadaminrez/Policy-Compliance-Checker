@@ -1,0 +1,7 @@
+{
+  "clinical_rules": [
+    { "id": "BMI001", "condition": "bmi", "must_be": "less than", "threshold": 30 },
+    { "id": "O2SAT001", "condition": "oxygen_saturation", "must_be": "at least", "threshold": 95 },
+    { "id": "TEMP002", "condition": "body_temperature", "must_be": "at most", "threshold": 99.5 }
+  ]
+}

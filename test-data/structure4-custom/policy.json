@@ -1,0 +1,64 @@
+{
+  "requirements": [
+    {
+      "id": "REQ001",
+      "description": "Subscription must be active",
+      "property": "subscription.status",
+      "operation": "==",
+      "target": "active"
+    },
+    {
+      "id": "REQ002",
+      "description": "Minimum subscription tier",
+      "property": "subscription.tier",
+      "operation": "in",
+      "target": ["premium", "enterprise"]
+    },
+    {
+      "id": "REQ003",
+      "description": "Usage within limits",
+      "property": "usage.api_calls",
+      "operation": "<=",
+      "target": 10000
+    },
+    {
+      "id": "REQ004",
+      "description": "Storage quota check",
+      "property": "usage.storage_gb",
+      "operation": "<",
+      "target": 100
+    },
+    {
+      "id": "REQ005",
+      "description": "Premium features require payment method",
+      "or": [
+        {
+          "property": "subscription.tier",
+          "operation": "==",
+          "target": "free"
+        },
+        {
+          "property": "billing.has_payment_method",
+          "operation": "==",
+          "target": true
+        }
+      ]
+    },
+    {
+      "id": "REQ006",
+      "description": "Account in good standing",
+      "and": [
+        {
+          "property": "account.verified",
+          "operation": "==",
+          "target": true
+        },
+        {
+          "property": "account.suspended",
+          "operation": "==",
+          "target": false
+        }
+      ]
+    }
+  ]
+}

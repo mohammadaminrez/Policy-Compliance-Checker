@@ -1,0 +1,64 @@
+{
+  "users": [
+    {
+      "user_id": "U001",
+      "name": "Alice Adult",
+      "age": 25,
+      "email": "alice@example.com",
+      "tier": "premium",
+      "verified": true,
+      "status": "active",
+      "parent_consent": false,
+      "last_login_days": 5,
+      "auto_renew": true
+    },
+    {
+      "user_id": "U002",
+      "name": "Bob Minor",
+      "age": 16,
+      "email": null,
+      "tier": "free",
+      "verified": false,
+      "status": "active",
+      "parent_consent": true,
+      "last_login_days": 10,
+      "auto_renew": false
+    },
+    {
+      "user_id": "U003",
+      "name": "Charlie Suspended",
+      "age": 30,
+      "email": "charlie@example.com",
+      "tier": "premium",
+      "verified": true,
+      "status": "suspended",
+      "parent_consent": false,
+      "last_login_days": 100,
+      "auto_renew": false
+    },
+    {
+      "user_id": "U004",
+      "name": "Diana Inactive",
+      "age": 28,
+      "email": "diana@example.com",
+      "tier": "free",
+      "verified": false,
+      "status": "inactive",
+      "parent_consent": false,
+      "last_login_days": 120,
+      "auto_renew": false
+    },
+    {
+      "user_id": "U005",
+      "name": "Eve Verified Free",
+      "age": 22,
+      "email": "eve@example.com",
+      "tier": "free",
+      "verified": true,
+      "status": "active",
+      "parent_consent": false,
+      "last_login_days": 15,
+      "auto_renew": false
+    }
+  ]
+}

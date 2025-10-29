@@ -11,6 +11,14 @@ services:
       - backend-data:/app
     environment:
       - PYTHONUNBUFFERED=1
+      # Schema-agnostic configuration (optional - defaults provided)
+      # Copy .env.example to .env to customize these values
+      - POLICY_WRAPPER_KEYS=${POLICY_WRAPPER_KEYS:-policies,rules,checks,requirements,constraints,validations}
+      - USER_WRAPPER_KEYS=${USER_WRAPPER_KEYS:-users,data,records,items,entries,people}
+      - USER_LABEL_KEYS=${USER_LABEL_KEYS:-user_id,id,email,username,name,first_name,last_name,display_name}
+      - POLICY_LABEL_KEYS=${POLICY_LABEL_KEYS:-name,title,id,policy,policy_id,policy_name,description}
+      - ENABLE_HEURISTIC_DETECTION=${ENABLE_HEURISTIC_DETECTION:-true}
+      - MIN_HEURISTIC_ARRAY_SIZE=${MIN_HEURISTIC_ARRAY_SIZE:-1}
     restart: unless-stopped
 
   frontend:

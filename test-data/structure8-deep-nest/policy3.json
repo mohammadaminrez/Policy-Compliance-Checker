@@ -1,0 +1,12 @@
+{
+  "policy_sets": {
+    "version": "2.2",
+    "mandatory": {
+      "category": "security",
+      "validations": [
+        { "name": "Max Failed Logins", "attribute": "security.login.max_failed", "op": "<=", "expected": 5 },
+        { "name": "Session Idle Timeout", "attribute": "security.session.idle_minutes", "op": "<=", "expected": 15 }
+      ]
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "data": [
+    {
+      "id": "TXN001",
+      "customer_name": "John Doe",
+      "transaction_amount": 3500,
+      "account_status": "active",
+      "balance": 15000,
+      "transaction_type": "transfer",
+      "verified_account": true,
+      "risk_level": "low"
+    },
+    {
+      "id": "TXN002",
+      "customer_name": "Jane Smith",
+      "transaction_amount": 12000,
+      "account_status": "active",
+      "balance": 25000,
+      "transaction_type": "payment",
+      "verified_account": false,
+      "risk_level": "medium"
+    },
+    {
+      "id": "TXN003",
+      "customer_name": "Mike Johnson",
+      "transaction_amount": 500,
+      "account_status": "inactive",
+      "balance": 800,
+      "transaction_type": "withdrawal",
+      "verified_account": true,
+      "risk_level": "low"
+    },
+    {
+      "id": "TXN004",
+      "customer_name": "Sarah Connor",
+      "transaction_amount": 8500,
+      "account_status": "active",
+      "balance": 50000,
+      "transaction_type": "transfer",
+      "verified_account": true,
+      "risk_level": "low"
+    },
+    {
+      "id": "TXN005",
+      "customer_name": "Peter Parker",
+      "transaction_amount": 2000,
+      "account_status": "active",
+      "balance": 5000,
+      "transaction_type": "deposit",
+      "verified_account": false,
+      "risk_level": "medium"
+    }
+  ]
+}

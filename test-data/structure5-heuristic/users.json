@@ -1,0 +1,62 @@
+{
+  "system_info": {
+    "export_date": "2024-10-29",
+    "total_records": 5
+  },
+  "registered_users": [
+    {
+      "email": "john.doe@example.com",
+      "user_age": 25,
+      "country": "US",
+      "privacy_accepted": true,
+      "terms_accepted": true,
+      "data_processing_consent": true,
+      "email_verified": true,
+      "registration_date": "2024-01-15"
+    },
+    {
+      "email": "jane.smith@example.com",
+      "user_age": 15,
+      "country": "UK",
+      "privacy_accepted": true,
+      "terms_accepted": true,
+      "data_processing_consent": false,
+      "email_verified": true,
+      "registration_date": "2024-02-20"
+    },
+    {
+      "email": "bob.johnson@example.com",
+      "user_age": 30,
+      "country": "RU",
+      "privacy_accepted": false,
+      "terms_accepted": false,
+      "data_processing_consent": false,
+      "email_verified": false,
+      "registration_date": "2024-03-10"
+    },
+    {
+      "email": "alice.wilson@example.com",
+      "user_age": 28,
+      "country": "CA",
+      "privacy_accepted": true,
+      "terms_accepted": true,
+      "data_processing_consent": true,
+      "email_verified": true,
+      "registration_date": "2024-04-05"
+    },
+    {
+      "email": "charlie.brown@example.com",
+      "user_age": 22,
+      "country": "DE",
+      "privacy_accepted": true,
+      "terms_accepted": false,
+      "data_processing_consent": true,
+      "email_verified": true,
+      "registration_date": "2024-05-12"
+    }
+  ],
+  "footer": {
+    "export_format": "JSON",
+    "version": "2.0"
+  }
+}

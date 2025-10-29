@@ -1,0 +1,10 @@
+{
+  "rules": [
+    { "title": "AML Flag Not Set", "attribute": "flags.aml", "operator": "==", "expected": false },
+    { "title": "KYC Verified", "attribute": "kyc_verified", "operator": "==", "expected": true },
+    { "title": "High Risk Requires Approval", "description": "risk == high => approved == true", "allOf": [
+        { "attribute": "risk_level", "operator": "==", "expected": "high" },
+        { "attribute": "approved_by_officer", "operator": "==", "expected": true }
+    ]}
+  ]
+}

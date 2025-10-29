@@ -1,0 +1,84 @@
+{
+  "export_metadata": {
+    "date": "2024-10-29",
+    "version": "1.0"
+  },
+  "organization": {
+    "id": "ORG001",
+    "name": "TechCorp",
+    "accounts": [
+      {
+        "username": "alice.admin",
+        "email": "alice@techcorp.com",
+        "security": {
+          "password": {
+            "strength": "strong",
+            "last_changed": "2024-10-01"
+          },
+          "two_factor": {
+            "enabled": true,
+            "method": "app"
+          },
+          "session": {
+            "timeout_minutes": 15,
+            "concurrent_sessions": 1
+          }
+        },
+        "preferences": {
+          "notifications": {
+            "email": true,
+            "sms": false
+          }
+        }
+      },
+      {
+        "username": "bob.user",
+        "email": "bob@techcorp.com",
+        "security": {
+          "password": {
+            "strength": "weak",
+            "last_changed": "2023-01-15"
+          },
+          "two_factor": {
+            "enabled": false,
+            "method": null
+          },
+          "session": {
+            "timeout_minutes": 60,
+            "concurrent_sessions": 3
+          }
+        },
+        "preferences": {
+          "notifications": {
+            "email": false,
+            "sms": true
+          }
+        }
+      },
+      {
+        "username": "charlie.dev",
+        "email": "charlie@techcorp.com",
+        "security": {
+          "password": {
+            "strength": "strong",
+            "last_changed": "2024-09-20"
+          },
+          "two_factor": {
+            "enabled": true,
+            "method": "sms"
+          },
+          "session": {
+            "timeout_minutes": 20,
+            "concurrent_sessions": 2
+          }
+        },
+        "preferences": {
+          "notifications": {
+            "email": true,
+            "sms": true
+          }
+        }
+      }
+    ]
+  }
+}

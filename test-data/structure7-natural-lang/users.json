@@ -1,0 +1,31 @@
+{
+  "patients": [
+    {
+      "patient_id": "P001",
+      "patient_name": "John Smith",
+      "patient_age": 45,
+      "body_temperature": 98.6,
+      "blood_pressure_systolic": 120,
+      "medication": "aspirin",
+      "patient_status": "stable"
+    },
+    {
+      "patient_id": "P002",
+      "patient_name": "Mary Johnson",
+      "patient_age": 16,
+      "body_temperature": 101.2,
+      "blood_pressure_systolic": 135,
+      "medication": "ibuprofen",
+      "patient_status": "stable"
+    },
+    {
+      "patient_id": "P003",
+      "patient_name": "Robert Davis",
+      "patient_age": 65,
+      "body_temperature": 97.8,
+      "blood_pressure_systolic": 150,
+      "medication": "acetaminophen",
+      "patient_status": "critical"
+    }
+  ]
+}

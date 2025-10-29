@@ -1,0 +1,57 @@
+{
+  "policies": [
+    {
+      "name": "Minimum Age Requirement",
+      "description": "Employees must be at least 18 years old",
+      "field": "age",
+      "op": ">=",
+      "value": 18
+    },
+    {
+      "name": "Employment Status Check",
+      "description": "Employee must have active status",
+      "field": "employment_status",
+      "op": "==",
+      "value": "active"
+    },
+    {
+      "name": "Department Assignment",
+      "description": "Employee must be assigned to a valid department",
+      "field": "department",
+      "op": "in",
+      "value": ["Engineering", "Sales", "HR", "Marketing", "Finance"]
+    },
+    {
+      "name": "Salary Range Validation",
+      "description": "Salary must be within acceptable range",
+      "allOf": [
+        {
+          "field": "salary",
+          "op": ">=",
+          "value": 30000
+        },
+        {
+          "field": "salary",
+          "op": "<=",
+          "value": 200000
+        }
+      ]
+    },
+    {
+      "name": "Manager or Senior Role",
+      "description": "Employee must be either a manager or senior level",
+      "anyOf": [
+        {
+          "field": "role",
+          "op": "==",
+          "value": "Manager"
+        },
+        {
+          "field": "level",
+          "op": "==",
+          "value": "Senior"
+        }
+      ]
+    }
+  ]
+}

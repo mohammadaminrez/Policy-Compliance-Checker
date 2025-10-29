@@ -1,0 +1,62 @@
+{
+  "checks": [
+    {
+      "policy_id": "SEC001",
+      "policy_name": "MFA Enabled",
+      "key": "security.mfa_enabled",
+      "op": "==",
+      "compare_to": true
+    },
+    {
+      "policy_id": "SEC002",
+      "policy_name": "Password Strength",
+      "key": "security.password_strength",
+      "op": "in",
+      "compare_to": ["strong", "very_strong"]
+    },
+    {
+      "policy_id": "SEC003",
+      "policy_name": "Last Login Recent",
+      "description": "User must have logged in within last 90 days",
+      "key": "last_login_days",
+      "op": "<=",
+      "compare_to": 90
+    },
+    {
+      "policy_id": "SEC004",
+      "policy_name": "Access Level Authorization",
+      "key": "access.level",
+      "op": "in",
+      "compare_to": ["standard", "admin", "superadmin"]
+    },
+    {
+      "policy_id": "SEC005",
+      "policy_name": "Privileged Access Requirements",
+      "description": "Admin users must have MFA and strong password",
+      "and": [
+        {
+          "key": "access.level",
+          "op": "==",
+          "compare_to": "admin"
+        },
+        {
+          "key": "security.mfa_enabled",
+          "op": "==",
+          "compare_to": true
+        },
+        {
+          "key": "security.password_strength",
+          "op": "==",
+          "compare_to": "very_strong"
+        }
+      ]
+    },
+    {
+      "policy_id": "SEC006",
+      "policy_name": "Failed Login Attempts",
+      "key": "security.failed_logins",
+      "op": "<",
+      "compare_to": 5
+    }
+  ]
+}

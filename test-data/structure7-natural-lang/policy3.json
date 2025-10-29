@@ -1,0 +1,6 @@
+{
+  "clinical_rules": [
+    { "id": "AGE002", "condition": "patient_age", "must_be": "greater than or equal to", "threshold": 21 },
+    { "id": "STATUS002", "condition": "patient_status", "must_be": "equals", "threshold": "admitted" }
+  ]
+}

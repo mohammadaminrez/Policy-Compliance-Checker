@@ -1,0 +1,7 @@
+{
+  "checks": [
+    { "policy_id": "SEC201", "policy_name": "SSO Enabled", "key": "auth.sso", "op": "==", "compare_to": true },
+    { "policy_id": "SEC202", "policy_name": "Recent Password Change", "key": "security.password_last_changed_days", "op": "<=", "compare_to": 90 },
+    { "policy_id": "SEC203", "policy_name": "VPN Required", "key": "network.vpn_required", "op": "==", "compare_to": true }
+  ]
+}

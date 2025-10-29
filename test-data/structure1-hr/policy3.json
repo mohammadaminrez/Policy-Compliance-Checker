@@ -1,0 +1,8 @@
+{
+  "policies": [
+    { "name": "Has Manager", "field": "manager_id", "op": "exists", "value": true },
+    { "name": "Department Must Not Be Empty", "field": "department", "op": "is_not_empty", "value": true },
+    { "name": "Compensation Floor", "field": "salary", "op": ">=", "value": 45000 },
+    { "name": "Title Contains Engineer", "field": "title", "op": "contains", "value": "Engineer" }
+  ]
+}

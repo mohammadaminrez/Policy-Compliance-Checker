@@ -1,0 +1,109 @@
+{
+  "items": [
+    {
+      "customer_id": "CUST001",
+      "name": "Tech Startup Inc",
+      "subscription": {
+        "status": "active",
+        "tier": "enterprise"
+      },
+      "usage": {
+        "api_calls": 5000,
+        "storage_gb": 45
+      },
+      "billing": {
+        "has_payment_method": true,
+        "balance": 0
+      },
+      "account": {
+        "verified": true,
+        "suspended": false,
+        "created_date": "2023-01-15"
+      }
+    },
+    {
+      "customer_id": "CUST002",
+      "name": "Small Business LLC",
+      "subscription": {
+        "status": "active",
+        "tier": "free"
+      },
+      "usage": {
+        "api_calls": 200,
+        "storage_gb": 2
+      },
+      "billing": {
+        "has_payment_method": false,
+        "balance": 0
+      },
+      "account": {
+        "verified": true,
+        "suspended": false,
+        "created_date": "2024-03-20"
+      }
+    },
+    {
+      "customer_id": "CUST003",
+      "name": "MegaCorp Solutions",
+      "subscription": {
+        "status": "active",
+        "tier": "premium"
+      },
+      "usage": {
+        "api_calls": 25000,
+        "storage_gb": 150
+      },
+      "billing": {
+        "has_payment_method": true,
+        "balance": -500
+      },
+      "account": {
+        "verified": true,
+        "suspended": false,
+        "created_date": "2022-06-10"
+      }
+    },
+    {
+      "customer_id": "CUST004",
+      "name": "Suspended Account Co",
+      "subscription": {
+        "status": "inactive",
+        "tier": "premium"
+      },
+      "usage": {
+        "api_calls": 100,
+        "storage_gb": 5
+      },
+      "billing": {
+        "has_payment_method": false,
+        "balance": -1000
+      },
+      "account": {
+        "verified": false,
+        "suspended": true,
+        "created_date": "2023-12-01"
+      }
+    },
+    {
+      "customer_id": "CUST005",
+      "name": "Growing Startup",
+      "subscription": {
+        "status": "active",
+        "tier": "premium"
+      },
+      "usage": {
+        "api_calls": 8000,
+        "storage_gb": 75
+      },
+      "billing": {
+        "has_payment_method": true,
+        "balance": 0
+      },
+      "account": {
+        "verified": true,
+        "suspended": false,
+        "created_date": "2024-01-05"
+      }
+    }
+  ]
+}
