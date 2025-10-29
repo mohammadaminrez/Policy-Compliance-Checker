@@ -36,6 +36,49 @@ export const Results = () => {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<'all' | 'passed' | 'failed'>('all');
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
+  const [expandedPolicies, setExpandedPolicies] = useState<Record<number, Record<string, boolean>>>({});
+
+  const togglePolicyExpand = (rowIndex: number, policyKey: string) => {
+    setExpandedPolicies(prev => {
+      const row = prev[rowIndex] || {};
+      return {
+        ...prev,
+        [rowIndex]: {
+          ...row,
+          [policyKey]: !row[policyKey]
+        }
+      };
+    });
+  };
+
+  const collectFailedConditions = (details: any): Array<{field: string | null; operator: string | null; expected: any; actual: any; error?: string | null;}> => {
+    const failures: Array<{field: string | null; operator: string | null; expected: any; actual: any; error?: string | null;}> = [];
+    const walk = (node: any) => {
+      if (Array.isArray(node)) {
+        node.forEach(walk);
+        return;
+      }
+      if (node && typeof node === 'object') {
+        const t = node.type;
+        if (t === 'condition') {
+          if (!node.passed) {
+            failures.push({
+              field: node.field ?? null,
+              operator: node.operator ?? null,
+              expected: node.expected,
+              actual: node.actual,
+              error: node.error ?? null,
+            });
+          }
+          return;
+        }
+        if ('conditions' in node) walk(node.conditions);
+        if ('condition' in node) walk(node.condition);
+      }
+    };
+    walk(details);
+    return failures;
+  };
 
   const [policies, setPolicies] = useState<any[]>([]);
   const [userFiles, setUserFiles] = useState<any[]>([]);
@@ -261,65 +304,64 @@ export const Results = () => {
                   </div>
                 </div>
 
-                {!result.all_passed && result.failed_conditions && result.failed_conditions.length > 0 && (
-                  <div className="result-failures">
-                    <strong>Failed Conditions ({result.failed_conditions.length}):</strong>
-                    <ul>
-                      {result.failed_conditions.slice(0, 5).map((cond, i) => (
-                        <li key={i}>
-                          <code>{cond.field}</code> {cond.operator} <code>{JSON.stringify(cond.expected)}</code>
-                          {' '}(got: <code>{JSON.stringify(cond.actual)}</code>)
-                        </li>
-                      ))}
-                      {result.failed_conditions.length > 5 && (
-                        <li className="more-failures">
-                          + {result.failed_conditions.length - 5} more failures
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                )}
-
                 {expandedRow === index && (
                   <div className="result-details">
+                    <div className="details-controls" />
                     <div className="detail-section">
                       <h4>User Data:</h4>
                       <pre>{JSON.stringify(result.user_data, null, 2)}</pre>
                     </div>
 
-                    {result.policy_files.map((policyFile, pfIdx) => (
-                      <div key={pfIdx} className="detail-section">
-                        <h4>
-                          Policy File: {policyFile.policy_file}
-                          {' '}({policyFile.total_rules} rules - {policyFile.passed_rules} passed, {policyFile.failed_rules} failed)
-                        </h4>
-                        {policyFile.rules.map((ruleResult, rIdx) => (
-                          <div key={rIdx} className={`policy-result ${ruleResult.passed ? 'passed' : 'failed'}`}>
-                            <div className="policy-result-header">
-                              <strong>Rule #{ruleResult.rule_index + 1}:</strong> {getRuleName(ruleResult.rule, ruleResult.rule_index)}
-                              <span className={`policy-status ${ruleResult.passed ? 'passed' : 'failed'}`}>
-                                {ruleResult.passed ? '✓' : '✗'}
+                    {result.policy_files.map((policyFile, pfIdx) => {
+                        const policyKey = `${policyFile.policy_file}-${pfIdx}`;
+                        const isOpen = !!(expandedPolicies[index] && expandedPolicies[index][policyKey]);
+                        return (
+                          <div key={pfIdx} className="detail-section policy-group">
+                            <div
+                              className="policy-group-header"
+                              onClick={() => togglePolicyExpand(index, policyKey)}
+                            >
+                              <span className={`caret ${isOpen ? 'open' : ''}`}>▸</span>
+                              <span className="policy-file-name">{policyFile.policy_file}</span>
+                              <span className="policy-file-counts">
+                                {policyFile.total_rules} rules · {policyFile.passed_rules} ✓ · {policyFile.failed_rules} ✗
                               </span>
                             </div>
-                            <pre>{JSON.stringify(ruleResult.rule, null, 2)}</pre>
+                            {isOpen && (
+                              <div className="policy-group-body">
+                                {policyFile.rules.map((ruleResult, rIdx) => (
+                                  <div key={rIdx} className={`policy-result ${ruleResult.passed ? 'passed' : 'failed'}`}>
+                                    <div className="policy-result-header">
+                                      <strong>Rule #{ruleResult.rule_index + 1}:</strong> {getRuleName(ruleResult.rule, ruleResult.rule_index)}
+                                      <span className={`policy-status ${ruleResult.passed ? 'passed' : 'failed'}`}>
+                                        {ruleResult.passed ? '✓' : '✗'}
+                                      </span>
+                                    </div>
+                                    {(() => {
+                                      const failed = collectFailedConditions(ruleResult.details || {});
+                                      return failed.length > 0 ? (
+                                        <div className="detail-section">
+                                          <h4>Failed Conditions ({failed.length}):</h4>
+                                          <ul>
+                                            {failed.map((cond, i) => (
+                                              <li key={i}>
+                                                <code>{cond.field}</code> {cond.operator} <code>{JSON.stringify(cond.expected)}</code>
+                                                {' '}(actual: <code>{JSON.stringify(cond.actual)}</code>)
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      ) : null;
+                                    })()}
+                                    <pre>{JSON.stringify(ruleResult.rule, null, 2)}</pre>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    ))}
-
-                    {result.failed_conditions && result.failed_conditions.length > 5 && (
-                      <div className="detail-section">
-                        <h4>All Failed Conditions ({result.failed_conditions.length}):</h4>
-                        <ul>
-                          {result.failed_conditions.map((cond, i) => (
-                            <li key={i}>
-                              <code>{cond.field}</code> {cond.operator} <code>{JSON.stringify(cond.expected)}</code>
-                              {' '}(actual: <code>{JSON.stringify(cond.actual)}</code>)
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                        );
+                      })}
+                    
                   </div>
                 )}
               </div>
