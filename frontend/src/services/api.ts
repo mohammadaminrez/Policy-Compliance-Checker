@@ -15,6 +15,11 @@ export const api = {
     return response.data;
   },
 
+  updatePolicy: async (id: number, payload: { name?: string; raw?: any }) => {
+    const response = await axios.put(`${API_BASE_URL}/policies/${id}`, payload);
+    return response.data;
+  },
+
   deletePolicy: async (id: number) => {
     const response = await axios.delete(`${API_BASE_URL}/policies/${id}`);
     return response.data;

@@ -1024,3 +1024,63 @@ body {
   color: #374151;
   padding: 0.25rem 0;
 }
+
+/* Modal + Editor enhancements */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+.modal.modal-lg { max-width: 1024px; }
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+.modal-body {
+  padding: 1rem;
+  overflow: auto;
+}
+.modal-footer {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.input-label { display: block; font-weight: 600; margin: 0.5rem 0; }
+.input-text { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 6px; }
+.input-textarea { width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.9rem; }
+.input-textarea.code { background: #0b1020; color: #e5e7eb; }
+.input-textarea.has-error { border-color: #dc2626; }
+.editor-area { min-height: 50vh; }
+.editor-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin: 0.25rem 0 0.5rem; }
+.editor-toolbar .left { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.validity { font-size: 0.85rem; }
+.validity.ok { color: #059669; }
+.validity.err { color: #dc2626; }
+.policy-actions { display: flex; gap: 0.5rem; }

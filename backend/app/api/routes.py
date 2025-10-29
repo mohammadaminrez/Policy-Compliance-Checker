@@ -213,6 +213,46 @@ async def delete_policy(policy_id: int, db: Session = Depends(get_db)):
     return {"message": "Policy deleted successfully"}
 
 
+class UpdatePolicyRequest(BaseModel):
+    name: str | None = None
+    raw: Any | None = None
+
+
+@router.put("/policies/{policy_id}")
+async def update_policy(policy_id: int, payload: UpdatePolicyRequest, db: Session = Depends(get_db)):
+    """Update a policy's name and/or raw JSON; bump version."""
+    policy = db.query(Policy).filter(Policy.id == policy_id).first()
+    if not policy:
+        raise HTTPException(status_code=404, detail="Policy not found")
+
+    try:
+        if payload.name is not None:
+            policy.name = payload.name
+
+        if payload.raw is not None:
+            # Accept any JSON structure (dict, list, primitives) as raw content
+            policy.raw = payload.raw
+
+        # Only bump version if anything changed
+        if payload.name is not None or payload.raw is not None:
+            current_version = policy.version or 0
+            policy.version = current_version + 1
+
+        db.add(policy)
+        db.commit()
+        db.refresh(policy)
+
+        return {
+            "id": policy.id,
+            "name": policy.name,
+            "version": policy.version,
+            "created_at": policy.created_at.isoformat(),
+            "raw": policy.raw,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update policy: {str(e)}")
+
+
 @router.post("/users/upload")
 async def upload_users(
     file: UploadFile = File(...),
