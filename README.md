@@ -1,42 +1,48 @@
 # Policy Compliance Checker
 
-> A schema-agnostic policy evaluation engine that evaluates user data against compliance rules without requiring predefined schemas.
-
 ## System Design
 
 ### Schema-Agnostic Architecture
 
-My Design Approach: A Schema-Agnostic Policy Engine
 My main goal was to build an engine that didn't require a predefined schema. I wanted to be able to feed it any user data and any policy and have it just work. This makes it flexible for any department, whether it's HR, security, or finance.
 
 My design is built on a simple three-step data flow, with a "brain" (the evaluator) at the end.
 
 1. The Data Flow: API -> Parser -> Normalizer -> Evaluator
+
 My FastAPI backend orchestrates this entire flow:
 
-File Parsing (file_parser.py): First, the raw files are sent to the FileParser service. Its only job is to turn files into Python objects. It's smart enough to convert CSVs into nested JSON (handling keys like meta.profile.is_senior) and automatically coerce types (like the string "true" to True, or "123" to the number 123).
+File Parsing (file_parser.py):
 
-Normalization (routes.py helpers): Just because we have objects doesn't mean we know where the data is. This step finds the actual lists. It looks for common wrapper keys (like policies, users, data, etc.) and has a fallback to just find the largest array in the file. This makes it schema-agnostic.
+First, the raw files are sent to the FileParser service. Its only job is to turn files into Python objects. It's smart enough to convert CSVs into nested JSON (handling keys like meta.profile.is_senior) and automatically coerce types (like the string "true" to True, or "123" to the number 123).
 
-Evaluation (evaluator.py): Once the API has a clean List[users] and List[policies], it passes them to the DynamicRuleEvaluator. This is the "brain."
+Normalization (routes.py helpers):
+
+Just because we have objects doesn't mean we know where the data is. This step finds the actual lists. It looks for common wrapper keys (like policies, users, data, etc.) and has a fallback to just find the largest array in the file. This makes it schema-agnostic.
+
+Evaluation (evaluator.py):
+
+Once the API has a clean List[users] and List[policies], it passes them to the DynamicRuleEvaluator. This is the "brain."
 
 2. The "Brain": The DynamicRuleEvaluator Class
+
 This is where the core logic lives. I designed it to be completely flexible:
 
-Recursive & Secure: It's a recursive tree-walker that can handle any nested policy with operators like allOf, anyOf, and not. For security, it uses a safe dictionary of operators (no eval()).
+Recursive & Secure:
 
-Flexible Key Discovery: It doesn't look for a hardcoded "field" key. It searches for common names (field, attribute, property). It does the same for operators (op, comparison) and values (value, expected).
+It's a recursive tree-walker that can handle any nested policy with operators like allOf, anyOf, and not. For security, it uses a safe dictionary of operators (no eval()).
 
-Natural Language Operators: It maps over 100 natural language aliases ("at_least", "greater_than") to their canonical symbols (>=, >), which makes writing policies easier.
+Flexible Key Discovery:
 
-Graceful Failure: As we proved in our tests, it handles data mismatches (like comparing "Smith" > "M") by failing safely, not by crashing.
+It doesn't look for a hardcoded "field" key. It searches for common names (field, attribute, property). It does the same for operators (op, comparison) and values (value, expected).
 
-3. Key Tech Choices
-FastAPI (Backend): I chose FastAPI because its async nature is modern and scalable. The automatic OpenAPI docs are a huge bonus for any API.
+Natural Language Operators:
 
-SQLite (Database): I used SQLite because it's perfect for this task. It's zero-config, embedded, and easily handles the requirement. It's a "simple and reasoned" choice for an MVP.
+It maps over 100 natural language aliases ("at_least", "greater_than") to their canonical symbols (>=, >), which makes writing policies easier.
 
-React (Frontend): It's the industry standard for building dynamic UIs that can easily handle fetching JSON data and displaying it in a table.
+Graceful Failure:
+
+As we proved in our tests, it handles data mismatches (like comparing "Smith" > "M") by failing safely, not by crashing.
 
 ---
 
