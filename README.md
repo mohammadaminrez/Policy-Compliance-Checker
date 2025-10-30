@@ -2,18 +2,33 @@
 
 > A schema-agnostic policy evaluation engine that evaluates user data against compliance rules without requiring predefined schemas.
 
-## What It Does
+## System Design
 
-Upload a policy file (JSON) and user data (CSV/JSON), and the system checks which users pass or fail the compliance rules. Works with any data structure - no configuration needed.
+### Schema-Agnostic Architecture
 
-## How It Works
+Traditional policy engines require predefined schemas - any new data structure needs code changes. I designed this system to be **completely schema-agnostic** by discovering structure at runtime.
 
-1. **Upload Files**: User uploads policy rules (JSON) and user data (CSV/JSON)
-2. **Parse**: System reads and converts files to structured data
-3. **Normalize**: Finds arrays and labels automatically (no schema required)
-4. **Evaluate**: Checks each user against each policy rule recursively
-5. **Store**: Saves results to database
-6. **Display**: Shows pass/fail results in a table
+**Core Design Decisions:**
+
+1. **No Hardcoded Schema**: All data stored as raw JSON. The system discovers field names, operators, and values dynamically at evaluation time.
+
+2. **Three-Layer Pipeline**:
+   - **FileParser Layer**: Handles CSV/JSON parsing with automatic type coercion (`"true"` → boolean, `"123"` → integer)
+   - **Transform Layer** *(Planned)*: Will add data validation, enrichment, and pre-processing before evaluation
+   - **Normalizer Layer**: Detects arrays using configurable wrapper keys (`policies`, `rules`, `users`, `data`) with fallback to heuristic detection
+   - **Evaluator Layer**: Recursive tree-walker that handles nested policies with logical operators (`allOf`, `anyOf`, `not`)
+
+3. **Dynamic Key Discovery**: Instead of expecting specific field names, the evaluator searches for common patterns:
+   - Field keys: `field`, `attribute`, `property`, `key`
+   - Operator keys: `op`, `operator`, `comparison`, `must_be`
+   - Value keys: `value`, `expected`, `target`, `threshold`
+
+4. **Operator Normalization**: Maps 100+ natural language operators to canonical forms (`greater_than` → `>`, `at_least` → `>=`)
+
+5. **Fail-Safe Strategy**: Multiple fallback mechanisms ensure the system always produces a result:
+   - Wrapper key detection → Heuristic array finding → Treat as single item
+
+This design allows the same codebase to handle HR policies, financial rules, security checks, or any compliance scenario without modification.
 
 ## Tech Stack
 
@@ -36,7 +51,7 @@ docker-compose up
 ```
 
 Then open:
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:80
 - Backend API: http://localhost:8000/docs
 
 ### Option 2: Local Development
@@ -56,50 +71,3 @@ cd frontend
 npm install
 npm start
 ```
-
----
-
-## Example Usage
-
-**1. Create policy.json:**
-```json
-{
-  "policies": [
-    {
-      "name": "Age Check",
-      "field": "age",
-      "op": ">=",
-      "value": 18
-    }
-  ]
-}
-```
-
-**2. Create users.csv:**
-```csv
-user_id,age
-john@email.com,25
-jane@email.com,16
-```
-
-**3. Upload both files and click "Evaluate"**
-
-**Result:**
-- john@email.com: ✅ Pass
-- jane@email.com: ❌ Fail
-
----
-
-## Features
-
-- Works with any JSON/CSV structure (no schema needed)
-- Supports 100+ operators: `>`, `<`, `==`, `contains`, `starts_with`, etc.
-- Handles nested data: `security.mfa_enabled`
-- Logical operators: `allOf` (AND), `anyOf` (OR), `not`
-- 17 test structures included in `test-data/`
-
----
-
-## License
-
-MIT
