@@ -10,6 +10,8 @@ My main goal was to build an engine that didn't require a predefined schema. I w
 
 My design is built on a simple three-step data flow, with a "brain" (the evaluator) at the end.
 
+https://www.mermaidchart.com/d/e827e290-a91f-4a5c-bbc3-2322aa60f59f
+
 ---
 
 ### 1. The Data Flow
