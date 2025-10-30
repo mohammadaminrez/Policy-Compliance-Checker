@@ -12,7 +12,13 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=[
+        "*",  # Allow all for now (change to specific origins in production)
+        "https://policy-compliance-checker.up.railway.app",
+        "https://enchanting-motivation-production.up.railway.app",
+        "http://localhost:80",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
