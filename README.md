@@ -1,7 +1,5 @@
 # Policy Compliance Checker
 
-> A schema-agnostic policy evaluation engine
-
 ---
 
 ## System Design
@@ -54,9 +52,23 @@ As we proved in our tests, it handles data mismatches (like comparing `"Smith" >
 
 ---
 
+## Improvements Ideas
+
+### Transform Layer
+
+Add a dedicated Transform Layer between FileParser and Normalizer for:
+- **Data Validation**: Validate input data before evaluation
+- **Data Enrichment**: Add computed fields or external data
+- **Pre-processing**: Clean and transform data before normalization
+- **Schema Enforcement**: Optional schema validation for stricter use cases
+
+This would make the pipeline: `API → FileParser → Transform → Normalizer → Evaluator`
+
+---
+
 ## How to Run
 
-### Option 1: Docker (Easiest)
+### Option 1: Docker
 
 ```bash
 docker-compose up
